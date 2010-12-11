@@ -1,12 +1,12 @@
-h1(#title). Marrow WSGI Exceptions
+h1(#title). Marrow WSGI Objects
 
-bq(subtitle). Exceptions representing HTTP responses for specific status codes.
+bq(subtitle). Request and Response objects and exceptions representing HTTP responses for specific status codes.
 
 bq(byline). (C) 2010, Alice Bevan-McGregor, Alex Grönholm, and contributors.
 
-bq(byline). "https://github.com/pulp/marrow.wsgi.exceptions":github-project
+bq(byline). "https://github.com/pulp/marrow.wsgi.objects":github-project
 
-[github-project]https://github.com/pulp/marrow.wsgi.exceptions
+[github-project]https://github.com/pulp/marrow.wsgi.objects
 
 
 
@@ -17,25 +17,25 @@ h2(#what-is). %1.% What are Marrow WSGI Exceptions?
 
 h2(#installation). %2.% Installation
 
-Installing @marrow.wsgi.exceptions@ is easy, just execute the following in a terminal:
+Installing @marrow.wsgi.objects@ is easy, just execute the following in a terminal:
 
-<pre><code>pip install marrow.wsgi.exceptions</code></pre>
+<pre><code>pip install marrow.wsgi.objects</code></pre>
 
-If you add @marrow.wsgi.exceptions@ to the @install_requires@ argument of the call to @setup()@ in your application's @setup.py@ file, @marrow.wsgi.exceptions@ will be automatically installed and made available when your own application is installed.
+If you add @marrow.wsgi.objects@ to the @install_requires@ argument of the call to @setup()@ in your application's @setup.py@ file, @marrow.wsgi.objects@ will be automatically installed and made available when your own application is installed.
 
 
 h3(#install-dev). %2.1.% Development Version
 
-Development takes place on "GitHub":github in the "marrow.wsgi.exceptions":github-project project.  Issue tracking, documentation, and downloads are provided there.
+Development takes place on "GitHub":github in the "marrow.wsgi.objects":github-project project.  Issue tracking, documentation, and downloads are provided there.
 
 Installing the current development version requires "Git":git, a distributes source code management system.  If you have Git, you can run the following to download and _link_ the development version into your Python runtime:
 
-<pre><code>git clone https://github.com/pulp/marrow.wsgi.exceptions.git
-(cd marrow.wsgi.exceptions; python setup.py develop)</code></pre>
+<pre><code>git clone https://github.com/pulp/marrow.wsgi.objects.git
+(cd marrow.wsgi.objects; python setup.py develop)</code></pre>
 
 You can upgrade to the latest version at any time:
 
-<pre><code>(cd marrow.wsgi.exceptions; git pull; python setup.py develop)</code></pre>
+<pre><code>(cd marrow.wsgi.objects; git pull; python setup.py develop)</code></pre>
 
 If you would like to make changes and contribute them back to the project, fork the GitHub project, make your changes, and submit a pull request.  This process is beyond the scope of this documentation; for more information, see "GitHub's documentation":github-help.
 

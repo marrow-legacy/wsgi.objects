@@ -29,7 +29,7 @@ if sys.version_info >= (3,0):
 else:
     from __builtin__ import execfile
 
-execfile(os.path.join("marrow", "wsgi", "exceptions", "release.py"), globals(), locals())
+execfile(os.path.join("marrow", "wsgi", "objects_release.py"), globals(), locals())
 
 
 
