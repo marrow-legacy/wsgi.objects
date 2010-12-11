@@ -1,4 +1,10 @@
-try: # pragma: no cover
-    __import__('pkg_resources').declare_namespace(__name__)
-except ImportError: # pragma: no cover
-    __import__('pkgutil').extend_path(__path__, __name__)
+# encoding: utf-8
+
+from __future__ import unicode_literals
+
+
+log = __import__('logging').getLogger(__name__)
+__all__ = []
+
+
+
