@@ -350,8 +350,9 @@ class HTTPExpectationFailed(HTTPError):
     """
     Code: 417
 
-    This indidcates that the expectation given in an Expect
-    request-header field could not be met by this server.
+    The expectation given in an Expect request-header field could not be met by
+    this server, or, if the server is a proxy, the server has unambiguous
+    evidence that the request could not be met by the next-hop server. 
     """
     code = 417
     status = b'Expectation Failed'
