@@ -10,7 +10,7 @@ bq(byline). "https://github.com/pulp/marrow.wsgi.objects":github-project
 
 
 
-h2(#what-is). %1.% What are Marrow WSGI Exceptions?
+h2(#what-is). %1.% What are Marrow WSGI Objects?
 
 
 
@@ -50,7 +50,7 @@ h2(#usage). %3.% Usage
 
 
 
-h2(#license). %4.% Marrow WSGI Exceptions License
+h2(#license). %4.% Marrow WSGI Objects License
 
 Marrow Script has been released under the MIT Open Source license.
 
