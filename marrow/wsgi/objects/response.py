@@ -1,10 +1,11 @@
 # encoding: utf-8
 
-from __future__ import unicode_literals
+# imports go here
 
 
 log = __import__('logging').getLogger(__name__)
-__all__ = []
+__all__ = ['Response']
 
 
 
+# code goes here
