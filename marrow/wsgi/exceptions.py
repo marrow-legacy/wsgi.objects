@@ -359,48 +359,6 @@ class HTTPExpectationFailed(HTTPError):
     explanation = 'Expectation failed.'
 
 #
-# WebDAV only 4xx exceptions
-#
-
-class HTTPUnprocessableEntity(HTTPError):
-    """
-    Code: 422
-
-    This indicates that the server is unable to process the contained
-    instructions.
-    Only for WebDAV.
-    """
-    code = 422
-    status = 'Unprocessable Entity'
-    explanation = 'Unable to process the contained instructions'
-
-
-class HTTPLocked(HTTPError):
-    """
-    Code: 424
-
-    This indicates that the resource is locked.
-    Only for WebDAV.
-    """
-    code = 423
-    status = 'Locked'
-    explanation = 'The resource is locked'
-
-
-class HTTPFailedDependency(HTTPError):
-    """
-    Code: 424
-
-    This indicates that the method could not be performed because the
-    requested action depended on another action and that action failed.
-    Only for WebDAV.
-    """
-    code = 424
-    status = 'Failed Dependency'
-    explanation = ('The method could not be performed because the requested '
-                   'action dependended on another action and that action failed')
-
-#
 # Server Error 5xx
 #
 
@@ -479,3 +437,58 @@ class HTTPVersionNotSupported(HTTPError):
     code = 505
     status = b'HTTP Version Not Supported'
     explanation = 'The HTTP version is not supported.'
+
+#
+# WebDAV exceptions (RFC 2518)
+#
+
+class HTTPUnprocessableEntity(HTTPError):
+    """
+    Code: 422; Only for WebDAV
+
+    The 422 (Unprocessable Entity) status code means the server understands the
+    content type of the request entity, and the syntax of the request entity is
+    correct but was unable to process the contained instructions.
+    """
+    code = 422
+    status = 'Unprocessable Entity'
+    explanation = 'Unable to process the contained instructions'
+
+
+class HTTPLocked(HTTPError):
+    """
+    Code: 423; Only for WebDAV
+
+    The 423 (Locked) status code means the source or destination resource of a
+    method is locked.
+    """
+    code = 423
+    status = 'Locked'
+    explanation = 'The resource is locked'
+
+
+class HTTPFailedDependency(HTTPError):
+    """
+    Code: 424; Only for WebDAV
+
+    The 424 (Failed Dependency) status code means that the method could not be
+    performed on the resource because the requested action depended on another
+    action and that action failed.
+    """
+    code = 424
+    status = 'Failed Dependency'
+    explanation = ('The method could not be performed because the requested '
+                   'action dependended on another action and that action failed')
+
+
+class HTTPInsufficientStorage(HTTPError):
+    """
+    Code: 507; Only for WebDAV
+
+    The 507 (Insufficient Storage) status code means the method could not be
+    performed on the resource because the server is unable to store the
+    representation needed to successfully complete the request.
+    """
+    code = 507
+    status = b'Insufficient Storage'
+    explanation = 'There was not enough space to save the resource.'
