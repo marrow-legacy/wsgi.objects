@@ -55,7 +55,22 @@ class HTTPError(HTTPException):
 
 # Informational - 1xx
 
-class HTTPContinue(HTTPException):
+class HTTPInformational(HTTPException):
+    """The base class from which HTTP 1xx status code exceptions are derived.
+    
+    This class of status code indicates a provisional response, consisting
+    only of the Status-Line and optional headers, and is terminated by an
+    empty line. There are no required headers for this class of status code.
+    Since HTTP/1.0 did not define any 1xx status codes, servers MUST NOT send
+    a 1xx response to an HTTP/1.0 client except under experimental conditions.
+    
+    For information, see RFC 2616 §10.1:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.1
+    """
+    pass
+
+
+class HTTPContinue(HTTPInformational):
     """100 Continue
     
     The client SHOULD continue with its request. This interim response
@@ -74,7 +89,7 @@ class HTTPContinue(HTTPException):
     status = b'Continue'
 
 
-class HTTPSwitchingProtocols(HTTPException):
+class HTTPSwitchingProtocols(HTTPInformational):
     """101 Switching Protocols
     
     The server understands and is willing to comply with the client's
@@ -101,7 +116,19 @@ class HTTPSwitchingProtocols(HTTPException):
 
 # Successful - 2xx
 
-class HTTPOk(HTTPException):
+class HTTPSuccess(HTTPException):
+    """The base class from which HTTP 2xx status code exceptions are derived.
+    
+    This class of status code indicates that the client's request was
+    successfully received, understood, and accepted.
+    
+    For information, see RFC 2616 §10.2:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2
+    """
+    pass
+
+
+class HTTPOk(HTTPSuccess):
     """200 OK
     
     The request has succeeded. The information returned with the response is
@@ -115,7 +142,7 @@ class HTTPOk(HTTPException):
     status = b'OK'
 
 
-class HTTPCreated(HTTPException):
+class HTTPCreated(HTTPSuccess):
     """201 Created
     
     The request has been fulfilled and resulted in a new resource being
@@ -140,7 +167,7 @@ class HTTPCreated(HTTPException):
     status = b'Created'
 
 
-class HTTPAccepted(HTTPException):
+class HTTPAccepted(HTTPSuccess):
     """202 Accepted
     
     The request has been accepted for processing, but the processing has not been completed. The request might or might not eventually be acted upon, as it might be disallowed when processing actually takes place. There is no facility for re-sending a status code from an asynchronous operation such as this.
@@ -155,7 +182,7 @@ class HTTPAccepted(HTTPException):
     status = b'Created'
 
 
-class HTTPNonAuthoritative(HTTPException):
+class HTTPNonAuthoritative(HTTPSuccess):
     """203 Non-Authoritative Information
     
     The returned metainformation in the entity-header is not the definitive
@@ -174,7 +201,7 @@ class HTTPNonAuthoritative(HTTPException):
     status = b'Non-Authoritative Information'
 
 
-class HTTPNoContent(HTTPException):
+class HTTPNoContent(HTTPSuccess):
     """204 No Content
     
     The server has fulfilled the request but does not need to return an
@@ -201,7 +228,7 @@ class HTTPNoContent(HTTPException):
     status = b'No content'
 
 
-class HTTPResetContent(HTTPException):
+class HTTPResetContent(HTTPSuccess):
     """205 Reset Content
     
     The server has fulfilled the request and the user agent SHOULD reset the
@@ -219,7 +246,7 @@ class HTTPResetContent(HTTPException):
     status = b'Reset Content'
 
 
-class HTTPPartialContent(HTTPException):
+class HTTPPartialContent(HTTPSuccess):
     """206 Partial Content
     
     The server has fulfilled the partial GET request for the resource.
@@ -239,17 +266,47 @@ class HTTPPartialContent(HTTPException):
 # Redirection 3xx
 
 class HTTPRedirection(HTTPException):
+    """The base class from which HTTP 3xx status code exceptions are derived.
+    
+    This class of status code indicates that further action needs to be taken
+    by the user agent in order to fulfill the request. The action required MAY
+    be carried out by the user agent without interaction with the user if and
+    only if the method used in the second request is GET or HEAD. A client
+    SHOULD detect infinite redirection loops, since such loops generate
+    network traffic for each redirection.
+    
+    For information, see RFC 2616 §10.3:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3
+    """
+    
     def __init__(self, headers=[], body=[], location=None):
         if location:
             headers.append((b'Location', location))
         HTTPException.__init__(self, headers, body)
-        
+
 
 class HTTPMultipleChoices(HTTPRedirection):
-    """
+    """300 Multiple Choices
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    The requested resource corresponds to any one of a set of representations,
+    each with its own specific location, and agent-driven negotiation
+    information is being provided so that the user (or user agent) can select
+    a preferred representation and redirect its request to that location.
+    
+    Unless it was a HEAD request, the response SHOULD include an entity
+    containing a list of resource characteristics and location(s) from which
+    the user or user agent can choose the one most appropriate. The entity
+    format is specified by the media type given in the Content-Type header
+    field. Depending upon the format and the capabilities of the user agent,
+    selection of the most appropriate choice MAY be performed automatically.
+    
+    If the server has a preferred choice of representation, it SHOULD include
+    the specific URI for that representation in the Location field; user
+    agents MAY use the Location field value for automatic redirection. This
+    response is cacheable unless indicated otherwise.
+    
+    For information, see RFC 2616 §10.3.1:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.1
     """
     
     code = 300
@@ -257,10 +314,30 @@ class HTTPMultipleChoices(HTTPRedirection):
 
 
 class HTTPMovedPermanently(HTTPRedirection):
-    """
+    """301 Moved Permanently
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    The requested resource has been assigned a new permanent URI and any
+    future references to this resource SHOULD use one of the returned URIs.
+    Clients with link editing capabilities ought to automatically re-link
+    references to the Request-URI to one or more of the new references
+    returned by the server, where possible. This response is cacheable unless
+    indicated otherwise.
+    
+    The new permanent URI SHOULD be given by the Location field in the
+    response. Unless the request method was HEAD, the entity of the response
+    SHOULD contain a short hypertext note with a hyperlink to the new URI(s).
+    
+    If the 301 status code is received in response to a request other than GET
+    or HEAD, the user agent MUST NOT automatically redirect the request unless
+    it can be confirmed by the user, since this might change the conditions
+    under which the request was issued.
+    
+          Note: When automatically redirecting a POST request after
+          receiving a 301 status code, some existing HTTP/1.0 user agents
+          will erroneously change it into a GET request.
+    
+    For information, see RFC 2616 §10.3.2:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.2
     """
     
     code = 301
@@ -268,10 +345,32 @@ class HTTPMovedPermanently(HTTPRedirection):
 
 
 class HTTPFound(HTTPRedirection):
-    """
+    """302 Found
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    The requested resource resides temporarily under a different URI. Since
+    the redirection might be altered on occasion, the client SHOULD continue
+    to use the Request-URI for future requests. This response is only
+    cacheable if indicated by a Cache-Control or Expires header field.
+    
+    The temporary URI SHOULD be given by the Location field in the response.
+    Unless the request method was HEAD, the entity of the response SHOULD
+    contain a short hypertext note with a hyperlink to the new URI(s).
+    
+    If the 302 status code is received in response to a request other than GET
+    or HEAD, the user agent MUST NOT automatically redirect the request unless
+    it can be confirmed by the user, since this might change the conditions
+    under which the request was issued.
+    
+          Note: RFC 1945 and RFC 2068 specify that the client is not allowed
+          to change the method on the redirected request.  However, most
+          existing user agent implementations treat 302 as if it were a 303
+          response, performing a GET on the Location field-value regardless
+          of the original request method. The status codes 303 and 307 have
+          been added for servers that wish to make unambiguously clear which
+          kind of reaction is expected of the client.
+    
+    For information, see RFC 2616 §10.3.3:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.3
     """
     
     code = 302
@@ -279,10 +378,27 @@ class HTTPFound(HTTPRedirection):
 
 
 class HTTPSeeOther(HTTPRedirection):
-    """
+    """303 See Other
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    The response to the request can be found under a different URI and SHOULD
+    be retrieved using a GET method on that resource. This method exists
+    primarily to allow the output of a POST-activated script to redirect the
+    user agent to a selected resource. The new URI is not a substitute
+    reference for the originally requested resource. The 303 response MUST NOT
+    be cached, but the response to the second (redirected) request might be
+    cacheable.
+    
+    The different URI SHOULD be given by the Location field in the response.
+    Unless the request method was HEAD, the entity of the response SHOULD
+    contain a short hypertext note with a hyperlink to the new URI(s).
+    
+          Note: Many pre-HTTP/1.1 user agents do not understand the 303
+          status. When interoperability with such clients is a concern, the
+          302 status code may be used instead, since most user agents react
+          to a 302 response as described here for 303.
+    
+    For information, see RFC 2616 §10.3.4:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.4
     """
     
     code = 303
@@ -290,54 +406,80 @@ class HTTPSeeOther(HTTPRedirection):
 
 
 class HTTPNotModified(HTTPRedirection):
-    """
+    """304 Not Modified
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    If the client has performed a conditional GET request and access is
+    allowed, but the document has not been modified, the server SHOULD respond
+    with this status code. The 304 response MUST NOT contain a message-body,
+    and thus is always terminated by the first empty line after the header
+    fields.
+    
+    This status code should be used with caution, as there are a number of
+    specific requirements for its use.
+    
+    For information, see RFC 2616 §10.3.5:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.5
     """
     
     code = 304
     status = b'Not Modified'
 
-    # TODO make sure this is ok
-    def __init__(self, date=None):
-        if date:
-            tz = b'+0000'
-            if date.tzinfo:
-                tz = b'%+05d' % date.tzinfo.utcoffset(date)
-            headers = [(b'Date', date.strftime(b'%a, %d %b %Y %H:%M:%S ' + tz))]
-        HTTPRedirection.__init__(self, headers)
 
-
-class HTTPUseProxy(HTTPException):
-    """
+class HTTPUseProxy(HTTPRedirection):
+    """305 Use Proxy
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    The requested resource MUST be accessed through the proxy given by the
+    Location field. The Location field gives the URI of the proxy. The
+    recipient is expected to repeat this single request via the proxy. 305
+    responses MUST only be generated by origin servers.
+    
+    For information, see RFC 2616 §10.3.6:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.6
     """
     
     code = 305
     status = b'Use Proxy'
 
 
-class HTTPTemporaryRedirect(HTTPException):
-    """
+class HTTPTemporaryRedirect(HTTPRedirection):
+    """307 Temporary Redirect
     
-    For information, see RFC 2616 §10.:
-    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
+    The requested resource resides temporarily under a different URI. Since
+    the redirection MAY be altered on occasion, the client SHOULD continue to
+    use the Request-URI for future requests. This response is only cacheable
+    if indicated by a Cache-Control or Expires header field.
+    
+    The temporary URI SHOULD be given by the Location field in the response.
+    Unless the request method was HEAD, the entity of the response SHOULD
+    contain a short hypertext note with a hyperlink to the new URI(s), since
+    many pre-HTTP/1.1 user agents do not understand the 307 status. Therefore,
+    the note SHOULD contain the information necessary for a user to repeat the
+    original request on the new URI.
+    
+    If the 307 status code is received in response to a request other than GET
+    or HEAD, the user agent MUST NOT automatically redirect the request unless
+    it can be confirmed by the user, since this might change the conditions
+    under which the request was issued.
+    
+    For information, see RFC 2616 §10.3.8:
+    http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.8
     """
     
     code = 307
     status = b'Temporary Redirect'
 
-#
-# Client Error 4xx
-#
 
-class HTTPBadRequest(HTTPError):
+
+# Client Error 4xx
+
+class HTTPClientError(HTTPError):
+    """"""
+    pass
+
+class HTTPBadRequest(HTTPClientError):
     """
     Code: 401
-
+    
     The request could not be understood by the server due to malformed syntax.
     """
     code = 400
@@ -346,7 +488,7 @@ class HTTPBadRequest(HTTPError):
                    'it is either malformed or otherwise incorrect.')
 
 
-class HTTPUnauthorized(HTTPError):
+class HTTPUnauthorized(HTTPClientError):
     """
     Code: 401
     
@@ -363,7 +505,7 @@ class HTTPUnauthorized(HTTPError):
                    'does not understand how to supply the credentials required.')
 
 
-class HTTPForbidden(HTTPError):
+class HTTPForbidden(HTTPClientError):
     """
     Code: 403
     
@@ -382,7 +524,7 @@ class HTTPForbidden(HTTPError):
     explanation = 'Access was denied to this resource.'
 
 
-class HTTPNotFound(HTTPError):
+class HTTPNotFound(HTTPClientError):
     """
     Code: 404
     
@@ -400,7 +542,7 @@ class HTTPNotFound(HTTPError):
     explanation = 'The resource could not be found.'
 
 
-class HTTPMethodNotAllowed(HTTPError):
+class HTTPMethodNotAllowed(HTTPClientError):
     """
     Code: 405
     
@@ -415,7 +557,7 @@ class HTTPMethodNotAllowed(HTTPError):
     explanation = 'The method {REQUEST_METHOD} is not allowed for this resource.'
 
 
-class HTTPNotAcceptable(HTTPError):
+class HTTPNotAcceptable(HTTPClientError):
     """
     Code: 406
     
@@ -432,7 +574,7 @@ class HTTPNotAcceptable(HTTPError):
                    'to your browser (content of type {HTTP_ACCEPT}).')
 
 
-class HTTPProxyAuthenticationRequired(HTTPError):
+class HTTPProxyAuthenticationRequired(HTTPClientError):
     """
     Code: 407
     
@@ -447,7 +589,7 @@ class HTTPProxyAuthenticationRequired(HTTPError):
     explanation = 'Authentication with a local proxy is needed.'
 
 
-class HTTPRequestTimeout(HTTPError):
+class HTTPRequestTimeout(HTTPClientError):
     """
     Code: 408
     
@@ -462,7 +604,7 @@ class HTTPRequestTimeout(HTTPError):
     explanation = 'The server has waited too long for the request to be sent by the client.'
 
 
-class HTTPConflict(HTTPError):
+class HTTPConflict(HTTPClientError):
     """
     Code: 409
     
@@ -477,7 +619,7 @@ class HTTPConflict(HTTPError):
     explanation = 'There was a conflict when trying to complete your request.'
 
 
-class HTTPGone(HTTPError):
+class HTTPGone(HTTPClientError):
     """
     Code: 410
     
@@ -493,7 +635,7 @@ class HTTPGone(HTTPError):
     explanation = 'This resource is no longer available. No forwarding address is given.'
 
 
-class HTTPLengthRequired(HTTPError):
+class HTTPLengthRequired(HTTPClientError):
     """
     Code: 411
     
@@ -507,7 +649,7 @@ class HTTPLengthRequired(HTTPError):
     explanation = 'Content-Length header required.'
 
 
-class HTTPPreconditionFailed(HTTPError):
+class HTTPPreconditionFailed(HTTPClientError):
     """
     Code: 412
     
@@ -525,7 +667,7 @@ class HTTPPreconditionFailed(HTTPError):
     explanation = 'Request precondition failed.'
 
 
-class HTTPRequestEntityTooLarge(HTTPError):
+class HTTPRequestEntityTooLarge(HTTPClientError):
     """
     Code: 413
     
@@ -540,7 +682,7 @@ class HTTPRequestEntityTooLarge(HTTPError):
     explanation = 'The body of your request was too large for this server.'
 
 
-class HTTPRequestURITooLong(HTTPError):
+class HTTPRequestURITooLong(HTTPClientError):
     """
     Code: 414
     
@@ -555,7 +697,7 @@ class HTTPRequestURITooLong(HTTPError):
     explanation = 'The request URI was too long for this server.'
 
 
-class HTTPUnsupportedMediaType(HTTPError):
+class HTTPUnsupportedMediaType(HTTPClientError):
     """
     Code: 415
     
@@ -571,7 +713,7 @@ class HTTPUnsupportedMediaType(HTTPError):
     explanation = 'The request media type is not supported by this server.'
 
 
-class HTTPRequestedRangeNotSatisfiable(HTTPError):
+class HTTPRequestedRangeNotSatisfiable(HTTPClientError):
     """
     Code: 416
     
@@ -587,7 +729,7 @@ class HTTPRequestedRangeNotSatisfiable(HTTPError):
     explanation = 'The Range requested is not available.'
 
 
-class HTTPExpectationFailed(HTTPError):
+class HTTPExpectationFailed(HTTPClientError):
     """
     Code: 417
     
@@ -602,11 +744,16 @@ class HTTPExpectationFailed(HTTPError):
     status = b'Expectation Failed'
     explanation = 'Expectation failed.'
 
-#
-# Server Error 5xx
-#
 
-class HTTPInternalServerError(HTTPError):
+
+# Server Error 5xx
+
+class HTTPServerError(HTTPError):
+    """"""
+    pass
+
+
+class HTTPInternalServerError(HTTPServerError):
     """
     Code: 500
     
@@ -623,7 +770,7 @@ class HTTPInternalServerError(HTTPError):
         'requested operation.')
 
 
-class HTTPNotImplemented(HTTPError):
+class HTTPNotImplemented(HTTPServerError):
     """
     Code: 501
     
@@ -639,7 +786,7 @@ class HTTPNotImplemented(HTTPError):
     explanation = 'The request method {REQUEST_METHOD} is not implemented for this server.'
 
 
-class HTTPBadGateway(HTTPError):
+class HTTPBadGateway(HTTPServerError):
     """
     Code: 502
     
@@ -654,7 +801,7 @@ class HTTPBadGateway(HTTPError):
     explanation = 'The upstream server is currently unavailable.'
 
 
-class HTTPServiceUnavailable(HTTPError):
+class HTTPServiceUnavailable(HTTPServerError):
     """
     Code: 503
     
@@ -669,7 +816,7 @@ class HTTPServiceUnavailable(HTTPError):
     explanation = 'The server is currently unavailable. Please try again at a later time.'
 
 
-class HTTPGatewayTimeout(HTTPError):
+class HTTPGatewayTimeout(HTTPServerError):
     """
     Code: 504
     
@@ -686,7 +833,7 @@ class HTTPGatewayTimeout(HTTPError):
     explanation = 'The gateway has timed out.'
 
 
-class HTTPVersionNotSupported(HTTPError):
+class HTTPVersionNotSupported(HTTPServerError):
     """
     Code: 505
     
@@ -702,9 +849,13 @@ class HTTPVersionNotSupported(HTTPError):
 
 #
 # WebDAV exceptions (RFC 2518)
-#
 
-class HTTPUnprocessableEntity(HTTPError):
+
+class WebDAVException(Exception):
+    pass
+
+
+class HTTPUnprocessableEntity(HTTPClientError, WebDAVException):
     """
     Code: 422; Only for WebDAV
     
@@ -720,7 +871,7 @@ class HTTPUnprocessableEntity(HTTPError):
     explanation = 'Unable to process the contained instructions'
 
 
-class HTTPLocked(HTTPError):
+class HTTPLocked(HTTPClientError, WebDAVException):
     """
     Code: 423; Only for WebDAV
     
@@ -735,7 +886,7 @@ class HTTPLocked(HTTPError):
     explanation = 'The resource is locked'
 
 
-class HTTPFailedDependency(HTTPError):
+class HTTPFailedDependency(HTTPClientError, WebDAVException):
     """
     Code: 424; Only for WebDAV
     
@@ -752,7 +903,7 @@ class HTTPFailedDependency(HTTPError):
                    'action dependended on another action and that action failed')
 
 
-class HTTPInsufficientStorage(HTTPError):
+class HTTPInsufficientStorage(HTTPServerError, WebDAVException):
     """
     Code: 507; Only for WebDAV
     
