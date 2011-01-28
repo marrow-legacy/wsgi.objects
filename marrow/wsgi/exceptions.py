@@ -1,7 +1,10 @@
+# encoding: utf-8
+
 """
 This module contains all HTTP status codes implemented as WSGI2 applications
 which can also be raised as exceptions.
 """
+
 from __future__ import unicode_literals
 
 
@@ -15,13 +18,12 @@ class HTTPException(Exception):
 
 
 class HTTPError(HTTPException):
-    template = '''\
-<html>
+    template = '''<html>
 <head><title>{code} {status}</title></head>
 <body>
 <h1>{code} {status}</h1>
 <p>{explanation}</p>
-<p>{detail}</p>
+<div>{detail}</div>
 </body>
 </html>
 '''
