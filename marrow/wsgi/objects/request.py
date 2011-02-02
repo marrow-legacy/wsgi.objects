@@ -87,6 +87,18 @@ class Request(object):
         return '\n'.join(parts)
     
     
+    def get(self, name, default=NoDefault):
+        try:
+            value = self.environ[name]
+        
+        except:
+            if default is NoDefault:
+                raise
+            
+            value = default
+        
+        return value
+    
     def __getitem__(self, name):
         return self.environ[name]
     
@@ -101,98 +113,52 @@ class Request(object):
     def url(self):
         """The full request URL including QUERY_STRING."""
         
-        url = [self.scheme, '://']
+        return self.urlize()
+    
+    def urlize(self, scheme=True, host=True, path=True, remainder=True, parameters=True, query=True, fragment=True):
+        url = [self.scheme, '://'] if scheme else []
         
         # TODO: HTTP Basic authentication username.
         # if self.user:
         #     pass
         
-        if self.host: url.append(self.host)
-        else: url.extend([self.server, ':', self.port])
+        if host:
+            if self.host: url.append(self.host)
+            else: url.extend([self.server, ':', self.port])
         
-        url.append(str(self.path))
-        url.append(str(self.remainder))
+        if path:
+            url.append(str(self.path))
+            
+            if remainder:
+                url.append(str(self.remainder))
         
-        if self.parameters:
+        if parameters and self.parameters:
             url.extend([';', self.parameters])
         
-        if self.query:
+        if query and self.query:
             url.extend(['?', self.query])
         
-        if self.fragment:
+        if fragment and self.fragment:
             url.extend(['#', self.fragment])
         
         return ''.join(url)
     
-    
-    _ = '''
-
-    
-    @property
-    def host_url(self):
-        """The URL excluding SCRIPT_NAME, PATH_INFO, and QUERY_STRING."""
-        
-        url = self.scheme + '://' + self.host
-        
-        if ':' not in self.host:
-            url += ':' + ('443' if self.scheme == 'https' else '80')
-        
-        return url
+    # These might not stick around, since they're easy to implement using urlize directly.
+    # ... and I hate underscores.  -_-;
+    host_url = property(lambda self: self.urlize(True, True, False, False, False, False))
+    application_url = property(lambda self: self.urlize(True, True, True, False, False, False, False))
+    path_url = property(lambda self: self.urlize(True, True, True, True, False, False, False))
     
     @property
-    def application_url(self):
-        """The URL excluding PATH_INFO and QUERY_STRING."""
-        return self.host_url + urllib.quote(self.name)
-    
-    @property
-    def path_url(self):
-        """The URL excluding QUERY_STRING."""
-        return self.application_url + urllib.quote(self.path_info)
-    
-    @property
-    def path(self):
-        """The query path excluding QUERY_STRING."""
-        return urllib.quote(self.name + self.path_info)
-    
-    @property
-    def path_qs(self):
-        """The query path including QUERY_STRING."""
-        return self.path + ('?' + self.query_string) if self.query_string else ''
-    
-    @property
-    def is_xhr(self):
+    def xhr(self):
         """Returns a boolean if X-Requested-With is "XMLHttpRequest".
-    
+        
         The presence of this value is JavaScript library-dependant. Both Prototype and jQuery are known to work.
         """
+        
         return self.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
-    
-    def relative_url(self, other, narrow=False):
-        """Resolve a relative path.
-        
-        If narrow is True use only SCRIPT_NAME when resolving.
-        """
-        
-        if narrow:
-            return urlparse.urljoin(self.applicaiton_url + ('' if self.applicaiton_url.endswith('/') else '/'), other)
-        
-        return urlparse.urljoin(self.path_url, other)
-    
-    def path_info_pop(self):
-        """Pop a segment from PATH_INFO and push it onto SCRIPT_NAME.
-        
-        Returns None if there are no segments left.  Will not return empty segments.
-        """
-        pass
-    
-    def path_info_peek(self):
-        """Return the next segment from PATH_INFO, or None."""
-        pass
-    
-    '''
 
 
-    
 class LocalRequest(Request):
     """A blank request environment suitable for automated testing."""
     
