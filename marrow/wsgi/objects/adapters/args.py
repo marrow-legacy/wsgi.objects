@@ -27,7 +27,7 @@ class Path(ReaderWriter):
 def _args_kwargs_default(self, obj):
     """Parse PATH_INFO, the response body, and QUERY_STRING to produce args and kwargs."""
     
-    args = tuple(obj.query.split('/'))
+    args = tuple(obj.remainder)
     
     kwargs = MultiBunch()
     
