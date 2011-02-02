@@ -43,6 +43,7 @@ class Request(object):
     user = ReaderWriter('REMOTE_USER', default=None) # TODO: abstract this out to remote.user and remote.addr
     address = ReaderWriter('REMOTE_ADDR', default=None)
     
+    parameters = ReaderWriter('PARAMETERS')
     query = ReaderWriter('QUERY_STRING')
     args = RoutingArgs('wsgiorg.routing_args')
     kwargs = RoutingKwargs('wsgiorg.routing_args')
