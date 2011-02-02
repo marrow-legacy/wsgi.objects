@@ -47,6 +47,7 @@ class Request(object):
     query = ReaderWriter('QUERY_STRING')
     args = RoutingArgs('wsgiorg.routing_args')
     kwargs = RoutingKwargs('wsgiorg.routing_args')
+    fragment = ReaderWriter('FRAGMENT')
     
     class __metaclass__(type):
         def __call__(cls, environ, *args, **kw):
@@ -102,19 +103,24 @@ class Request(object):
         
         url = [self.scheme, '://']
         
-        if self.user:
-            pass
+        # TODO: HTTP Basic authentication username.
+        # if self.user:
+        #     pass
         
-        url.append(self.host)
-        
-        if ':' not in self.host:
-            url.extend([':', ('443' if self.scheme == 'https' else '80')])
+        if self.host: url.append(self.host)
+        else: url.extend([self.server, ':', self.port])
         
         url.append(str(self.path))
         url.append(str(self.remainder))
         
+        if self.parameters:
+            url.extend([';', self.parameters])
+        
         if self.query:
             url.extend(['?', self.query])
+        
+        if self.fragment:
+            url.extend(['#', self.fragment])
         
         return ''.join(url)
     
