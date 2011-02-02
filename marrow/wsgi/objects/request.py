@@ -56,7 +56,7 @@ class Request(object):
                 environ = environ.environ
             
             if 'marrow.request' not in environ:
-                environ['marrow.request'] = type.__call__(cls, environ, *args, **kw) #proxy(type.__call__(cls, environ, *args, **kw))
+                environ['marrow.request'] = type.__call__(cls, environ, *args, **kw)
             
             return environ['marrow.request']
     
@@ -185,6 +185,7 @@ class LocalRequest(Request):
 
         path = urllib.unquote(path)
         
+        # TODO: Update this to better conform to PEP 444.
         env = {
                 'REQUEST_METHOD': 'GET',
                 'SCRIPT_NAME': '',
@@ -201,7 +202,7 @@ class LocalRequest(Request):
                 # 'wsgi.errors': sys.stderr,
                 'wsgi.multithread': False,
                 'wsgi.multiprocess': False,
-                # 'wsgi.run_once': False,
+                'wsgi.run_once': True,
             }
 
         if POST is not None:
