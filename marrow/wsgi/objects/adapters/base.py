@@ -70,6 +70,8 @@ class Int(ReaderWriter):
             return int(super(Int, self).__get__(obj, cls))
         except AttributeError:
             return None
-        
+        except TypeError:
+            return None
+    
     def __set__(self, obj, value):
         super(Int, self).__set__(obj, binary(value))
