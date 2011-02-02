@@ -7,6 +7,7 @@ from marrow.wsgi.objects.adapters.base import *
 from marrow.wsgi.objects.adapters.body import *
 from marrow.wsgi.objects.adapters.content import *
 from marrow.wsgi.objects.adapters.misc import *
+from marrow.wsgi.objects.adapters.status import *
 
 
 __all__ = [
@@ -15,6 +16,7 @@ __all__ = [
         'RequestBody', # body
         'ContentLength', 'ContentMD5', 'ContentType', 'Charset', # content
         'Host', # misc
+        'Status', # status
         
         'QUOTES_RE',
     ]
