@@ -14,7 +14,11 @@ class HTTPException(Exception):
         self.headers = headers
         self.body = body
     
-    def __call__(self, environ):
+    def __call__(self, environ, start_response=None):
+        if start_response:
+            start_resopnse(b'%d %s' % (self.code, self.status), self.headers)
+            return self.body
+        
         return b'%d %s' % (self.code, self.status), self.headers, self.body
 
 
