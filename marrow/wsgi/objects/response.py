@@ -26,8 +26,8 @@ class Response(object):
     status = Status(200)
     # body = RequestBody()
     
-    type = ContentType('Content-Type', 'text/html')
-    encoding = Charset('Content-Type', 'utf-8')
+    mime = ContentType('Content-Type')
+    encoding = Charset('Content-Type')
     disposition = ReaderWriter('Content-Disposition', rfc='14.11')
     pragma = ReaderWriter('Pragma', rfc='14.32')
     server = ReaderWriter('Server', rfc='14.38')
@@ -57,13 +57,13 @@ class Response(object):
     def __init__(self, request=None, **kw):
         self.headers = CaseInsensitiveDict()
         
-        self.type = 'text/plain'
-        self.encoding = 'UTF-8'
+        self.mime = "text/html"
+        self.encoding = "utf-8"
         
         self.body = None
         
         if hasattr(request, 'environ'):
-            self.environ = environ
+            self.environ = request.environ
             self.request = request
         
         else:

@@ -18,7 +18,7 @@ class wsgify(object):
     def __init__(self, func=None, *args, **kw):
         self.func = func
         self.args = args
-        self.kwargs = kwargs
+        self.kw = kw
     
     def __repr__(self):
         return ""
@@ -31,13 +31,16 @@ class wsgify(object):
     
     def __call__(self, environ, start_response=None):
         req = Request(environ)
-        req.response = Response() # Ensure response.request is weakrefed back.
+        req.response = Response(req)
         
         try:
-            resp = self.call(req, *self.args, **self.kwargs)
+            resp = self.call(req, *self.args, **self.kw)
         
         except exc.HTTPException:
             resp = exception().exception
+        
+        if resp is None:
+            return req.response(environ, start_response)
         
         # Handle None
         # Handle byte string
@@ -63,8 +66,8 @@ class wsgify(object):
         req = LocalRequest(url, **kw)
         return self(req)
     
-    def call(self, req, *args, **kwargs):
-        return self.func(req, *args, **kwargs)
+    def call(self, req, *args, **kw):
+        return self.func(req, *args, **kw)
     
     @property
     def undecorated(self):
