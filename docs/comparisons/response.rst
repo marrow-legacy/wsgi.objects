@@ -68,4 +68,4 @@ body_file                                   x   stream                          
                                                 close()                                                                 
                                                 get_wsgi_headers()                  wsgi (property)                     wc returns a 3-tuple of status, headers, body_iter
                                                 get_wsgi_response()                 wsgi (property)                     
-__call__()                                      __call__()                          __call__()                          
+__call__()                                      __call__()                          __call__()                          wc acts as both a PEP 333 and 444 application
