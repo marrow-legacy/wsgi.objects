@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from collections import namedtuple
+
 from marrow.util.compat import binary, unicode, IO, parse_qsl
 from marrow.util.bunch import Bunch, MultiBunch
 from marrow.util.insensitive import CaseInsensitiveDict
@@ -10,6 +12,9 @@ from marrow.wsgi.objects.adapters import *
 
 log = __import__('logging').getLogger(__name__)
 __all__ = ['Response']
+
+
+WSGIData = namedtuple('WSGIData', ['status', 'headers', 'body'])
 
 
 
@@ -23,8 +28,11 @@ class Response(object):
     
     """
     
-    status = Status(200)
+    status = Status()
     # body = RequestBody()
+    conditional = False
+    
+    defaults = Bunch(status=200, mime='text/html')
     
     mime = ContentType('Content-Type')
     encoding = Charset('Content-Type')
@@ -35,6 +43,7 @@ class Response(object):
     cookies = []
     
     location = ReaderWriter('Location')
+    language = ReaderWriter('Content-Language')
     
     # date = Date('Date', rfc='14.18')
     age = Int('Age', rfc='14.6')
@@ -44,21 +53,22 @@ class Response(object):
     # etag = ETag('ETag', rfc='14.19')
     # retry = TimeDelta('Retry-After', rfc='14.37')
     
-    # allow = List('Allow', rfc='14.7')
+    allow = List('Allow', rfc='14.7')
+    vary = List('Vary', rfc='14.44')
     
     # language = List('Content-Language', rfc='14.12')
     location = ReaderWriter('Content-Location', rfc='14.14')
     hash = ContentMD5('Content-MD5', rfc='14.16')
+    # ranges = AcceptRanges('Accept-Ranges', rfc='14.16')
     # range = ContentRange('Content-Range', rfc='14.16')
     length = ContentLength('Content-Length', rfc='14.17')
-    
-    # vary = List('Vary', rfc='14.44')
     
     def __init__(self, request=None, **kw):
         self.headers = CaseInsensitiveDict()
         
-        self.mime = "text/html"
-        self.encoding = "utf-8"
+        self.status = self.defaults.status
+        self.mime = self.defaults.mime
+        self.encoding = self.defaults.encoding
         
         self.body = None
         
@@ -92,18 +102,24 @@ class Response(object):
     def __delitem__(self, name):
         del self.headers[name]
     
-    def __call__(self, environ=None, start_response=None):
-        """Process the headers and content body and return a 3-tuple of status, header list, and iterable body.
-        
-        Alternatively, pass the status and header list to the provided start_response callable and return an iterable body.
-        
-        start_response is included to support WSGI 1, and is not required for WSGI 2.
-        """
-        
+    _final = False
+    
+    @property
+    def final(self):
+        """I'm the 'x' property."""
+        return self._final
+    
+    @final.setter
+    def final(self, value):
+        self._final = bool(value) if not self._final
+    
+    @x.deleter
+    def final(self):
+        return
+    
+    @property
+    def wsgi(self):
         body = self.body
-        
-        if environ is None:
-            environ = self.environ
         
         if isinstance(body, binary): body = [body]
         elif isinstance(body, unicode): body = [body.encode(self.encoding)]
@@ -116,10 +132,25 @@ class Response(object):
             
             body = generator(body)
         
+        return WSGIData(binary(self.status), [(n, v) for n, v in self.headers.iteritems()], body)
+    
+    def __call__(self, environ=None, start_response=None):
+        """Process the headers and content body and return a 3-tuple of status, header list, and iterable body.
+        
+        Alternatively, pass the status and header list to the provided start_response callable and return an iterable body.
+        
+        start_response is included to support WSGI 1, and is not required for WSGI 2.
+        """
+        
+        if environ is None:
+            environ = self.environ
+        
+        status, headers, body = self.wsgi
+        
         # We support WSGI 1.0.
         if hasattr(start_response, '__call__'):
-            start_response(binary(self.status), [(n, v) for n, v in self.headers.items()])
+            start_response(status, headers)
             return body
         
-        return binary(self.status), [(n, v) for n, v in self.headers.iteritems()], body
+        return status, headers, body
 

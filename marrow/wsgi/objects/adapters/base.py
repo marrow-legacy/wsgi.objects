@@ -48,7 +48,7 @@ class ReaderWriter(object):
         raise AttributeError('WSGI environment does not contain %s key.' % (self.header, ))
     
     def __set__(self, obj, value):
-        if not self.rw:
+        if not self.rw or obj.final:
             raise AttributeError('%s is a read-only value.' % (self.header, ))
         
         if value is None:
@@ -58,7 +58,7 @@ class ReaderWriter(object):
         obj[self.header] = value
     
     def __delete__(self, obj):
-        if not self.rw:
+        if not self.rw or obj.final:
             raise AttributeError('%s is a read-only value.' % (self.header, ))
         
         del obj[self.header]
