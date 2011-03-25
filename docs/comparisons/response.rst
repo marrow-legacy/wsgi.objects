@@ -51,7 +51,7 @@ conditional_response (bool)          b      x   make_conditional()              
 etag                                 b      x   add_etag()                          etag                                
 etag                                 b      x   get_etag()                          etag                                
 etag                                 b      x   set_etag()                          etag                                
-                                            z   freeze()                                                                
+                                            z   freeze()                            final (bool)                        
 location                             x      x   location                            location                            
 pragma                               b      b                                       pragma                              
 age                                  x      x   age                                 age                                 
