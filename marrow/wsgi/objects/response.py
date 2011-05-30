@@ -111,7 +111,7 @@ class Response(object):
     
     @final.setter
     def final(self, value):
-        self._final = bool(value) if not self._final
+        self._final = bool(value) if not self._final else True
     
     @x.deleter
     def final(self):
