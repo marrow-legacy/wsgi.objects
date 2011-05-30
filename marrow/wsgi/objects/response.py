@@ -53,8 +53,8 @@ class Response(object):
     # etag = ETag('ETag', rfc='14.19')
     # retry = TimeDelta('Retry-After', rfc='14.37')
     
-    allow = List('Allow', rfc='14.7')
-    vary = List('Vary', rfc='14.44')
+    #allow = List('Allow', rfc='14.7')
+    #vary = List('Vary', rfc='14.44')
     
     # language = List('Content-Language', rfc='14.12')
     location = ReaderWriter('Content-Location', rfc='14.14')
