@@ -93,7 +93,7 @@ class Charset(ReaderWriter):
     
     def __set__(self, obj, value):
         if not value:
-            self.delete(obj)
+            self.__delete__(obj)
             return
         
         value = binary(value)
