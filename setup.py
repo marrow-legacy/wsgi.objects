@@ -4,36 +4,41 @@
 import os
 import sys
 
-__import__('distribute_setup').use_setuptools()
-
 from setuptools import setup, find_packages
 
 
-if sys.version_info <= (2, 6):
+if sys.version_info < (2, 6):
     raise SystemExit("Python 2.6 or later is required.")
 
 exec(open(os.path.join("marrow", "wsgi", "objects", "release.py")))
 
 
+
 setup(
-        name = 'marrow.wsgi.objects',
+        name = "marrow.wsgi.objects",
         version = release,
         
-        description = 'A collection of object-oriented WSGI2 helpers.',
-        long_description = '''\
+        description = "A collection of object-oriented WSGI2 helpers.",
+        long_description = """\
 For full documentation, see the README.textile file present in the package,
 or view it online on the GitHub project page:
 
-https://github.com/pulp/marrow.wsgi.objects''',
+https://github.com/marrow/marrow.wsgi.objects""",
         
-        author = 'Alice Bevan-McGregor',
-        author_email = 'alice@gothcandy.com',
-        url = 'https://github.com/pulp/marrow.wsgi.objects',
-        license = 'MIT',
+        author = "Alice Bevan-McGregor",
+        author_email = "alice+marrow@gothcandy.com",
+        url = "https://github.com/marrow/marrow.wsgi.objects",
+        license = "MIT",
         
-        install_requires = ['marrow.util'],
+        install_requires = [
+            'marrow.util < 2.0'
+        ],
+        
         test_suite = 'nose.collector',
-        tests_require = ['nose'],
+        tests_require = [
+            'nose',
+            'coverage'
+        ],
         
         classifiers = [
             "Development Status :: 5 - Production/Stable",
@@ -50,8 +55,9 @@ https://github.com/pulp/marrow.wsgi.objects''',
         ],
         
         packages = find_packages(exclude=['examples', 'tests']),
-        include_package_data = True,
         zip_safe = True,
+        include_package_data = True,
+        package_data = {'': ['README.textile', 'LICENSE']},
         
         namespace_packages = ['marrow']
     )
