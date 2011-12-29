@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from marrow.util.compat import native, bytestring
+
 __all__ = ['_reasons', '_codes', 'Status']
 
 
@@ -66,7 +68,7 @@ _reasons = {
         510: 'Not Extended',
     }
 
-_codes = dict([(k, j) for j, k in _reasons.iteritems()])
+_codes = dict([(_reasons[j], j) for j in _reasons])
 
 
 class Status(object):
@@ -79,12 +81,15 @@ class Status(object):
     def __set__(self, obj, value):
         if isinstance(value, int):
             self.value = value
+            return
         
-        elif isinstance(value, basestring):
-            self.value = _codes[value]
+        self.value = _codes.get(value, native(value, 'ascii'))
     
     def __str__(self):
-        return '%d %s' % (self.value, _reasons[self.value])
+        try:
+            return '%d %s' % (self.value, _reasons[self.value])
+        except KeyError:
+            return native(self.value, 'ascii')
     
     def __repr__(self):
         return repr(str(self))

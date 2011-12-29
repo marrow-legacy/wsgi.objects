@@ -3,7 +3,12 @@
 import re
 import sys
 import urllib
-import urlparse
+
+try:
+    import urlparse
+except ImportError:
+    from urllib import parse as urlparse
+
 import cgi
 
 from weakref import proxy
@@ -65,8 +70,8 @@ class Request(object):
         
         self.environ = environ
         
-        for name, value in kw.iteritems():
-            setattr(self, name, value)
+        for name in kw:
+            setattr(self, name, kw['name'])
     
     
     def __repr__(self):
@@ -162,7 +167,7 @@ class Request(object):
 class LocalRequest(Request):
     """A blank request environment suitable for automated testing."""
     
-    def __init__(self, environ=None, path=binary('/'), POST=None, **kw):
+    def __init__(self, environ=None, path=b'/', POST=None, **kw):
         """Initialize a blank environment.
         
         The path argument may be a full URL or simple urlencoded path.
@@ -170,15 +175,15 @@ class LocalRequest(Request):
         If you pass a dictionary as environ, your keys will take prescedence.
         """
         
-        scheme = 'http'
-        netloc = 'localhost:80'
-        query_string = ''
+        scheme = b'http'
+        netloc = b'localhost:80'
+        query_string = b''
 
         if SCHEME_RE.search(path):
             scheme, netloc, path, query_string, fragment = urlparse.urlsplit(path)
 
             if ':' not in netloc:
-                netloc += dict(http=':80', https=':443')[scheme]
+                netloc += dict(http=b':80', https=b':443')[scheme]
 
         elif path and '?' in path:
             path, query_string = path.split('?', 1)
@@ -209,7 +214,7 @@ class LocalRequest(Request):
             env['REQUEST_METHOD'] = 'POST'
             body = urllib.urlencode(POST.items() if hasattr(POST, 'items') else POST)
             env['wsgi.input'] = IO(body)
-            env['CONTENT_LENGTH'] = binary(len(body))
+            env['CONTENT_LENGTH'] = binary(len(body), 'ascii')
             env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
 
         if environ:

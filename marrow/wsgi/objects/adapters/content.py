@@ -1,9 +1,11 @@
 # encoding: utf-8
 
+from __future__ import unicode_literals
+
 import re
 import hashlib
 
-from marrow.util.compat import binary, unicode
+from marrow.util.compat import binary, unicode, native, bytestring
 from marrow.util.object import NoDefault
 
 from marrow.wsgi.objects.adapters.base import *
@@ -43,23 +45,22 @@ class ContentType(ReaderWriter):
     If you leave parameters off when assigning a value then existing parameters will be preserved.
     """
     
-    default = binary('')
+    default = b''
     
     def __get__(self, obj, cls, strip=True):
-        value = super(ContentType, self).__get__(obj, cls)
+        value = native(super(ContentType, self).__get__(obj, cls))
         if not value: return None
-        return value.split(';', 1)[0] if strip else value
+        return bytestring(value.split(';', 1)[0] if strip else value)
     
     def __set__(self, obj, value):
-        value = binary(value) if value is not None else ''
+        value = native(value) if value is not None else ''
         
         if ';' not in value:
-            original = super(ContentType, self).__get__(obj, None)
-            
+            original = native(super(ContentType, self).__get__(obj, None), 'ascii')
             if ';' in original:
                 value += ';' + original.split(';', 1)[1]
         
-        super(ContentType, self).__set__(obj, value)
+        super(ContentType, self).__set__(obj, bytestring(value, 'ascii'))
 
 
 class Charset(ReaderWriter):
@@ -77,13 +78,13 @@ class Charset(ReaderWriter):
     no error).
     """
     
-    default = binary('; charset="utf8"')
+    default = '; charset="utf8"'
     
     def __get__(self, obj, cls):
         content_type = super(Charset, self).__get__(obj, cls)
         if not content_type: return None
         
-        charset_match = CHARSET_RE.search(content_type)
+        charset_match = CHARSET_RE.search(native(content_type, 'ascii'))
         
         if charset_match:
             result = charset_match.group(1).strip('"').strip()
@@ -96,8 +97,8 @@ class Charset(ReaderWriter):
             self.__delete__(obj)
             return
         
-        value = binary(value)
-        content_type = super(Charset, self).__get__(obj, None)
+        value = native(value)
+        content_type = native(super(Charset, self).__get__(obj, None), 'ascii')
         charset_match = CHARSET_RE.search(content_type) if content_type else None
         
         if charset_match:
@@ -108,12 +109,12 @@ class Charset(ReaderWriter):
         #     content_type += ', charset="%s"' % charset
         
         elif content_type:
-            content_type += '; charset="%s"' % value
+            content_type += '; charset="' + value + '"'
         
         else:
-            content_type = '; charset="%s"' % value
+            content_type = '; charset="' + value + '"'
         
-        super(Charset, self).__set__(obj, content_type)
+        super(Charset, self).__set__(obj, bytestring(content_type, 'ascii'))
     
     def __delete__(self, obj):
         content_type = CHARSET_RE.sub('', super(Charset, self).__get__(obj, None))

@@ -32,36 +32,36 @@ class Response(object):
     # body = RequestBody()
     conditional = False
     
-    defaults = Bunch(status=200, mime='text/html')
+    defaults = Bunch(status=200, mime=b'text/html', encoding=b'utf8')
     
-    mime = ContentType('Content-Type')
-    encoding = Charset('Content-Type')
-    disposition = ReaderWriter('Content-Disposition', rfc='14.11')
-    pragma = ReaderWriter('Pragma', rfc='14.32')
-    server = ReaderWriter('Server', rfc='14.38')
+    mime = ContentType(b'Content-Type')
+    encoding = Charset(b'Content-Type')
+    disposition = ReaderWriter(b'Content-Disposition', rfc='14.11')
+    pragma = ReaderWriter(b'Pragma', rfc='14.32')
+    server = ReaderWriter(b'Server', rfc='14.38')
     
     cookies = []
     
-    location = ReaderWriter('Location')
-    language = ReaderWriter('Content-Language')
+    location = ReaderWriter(b'Location')
+    language = ReaderWriter(b'Content-Language')
     
-    # date = Date('Date', rfc='14.18')
-    age = Int('Age', rfc='14.6')
-    # cache = CacheControl('Cache-Control', rfc='14.9')
-    # expires = Date('Expires', rfc='14.21')
-    # modified = Date('Last-Modified', rfc='14.29')
-    # etag = ETag('ETag', rfc='14.19')
-    # retry = TimeDelta('Retry-After', rfc='14.37')
+    # date = Date(b'Date', rfc='14.18')
+    age = Int(b'Age', rfc='14.6')
+    # cache = CacheControl(b'Cache-Control', rfc='14.9')
+    # expires = Date(b'Expires', rfc='14.21')
+    # modified = Date(b'Last-Modified', rfc='14.29')
+    # etag = ETag(b'ETag', rfc='14.19')
+    # retry = TimeDelta(b'Retry-After', rfc='14.37')
     
-    #allow = List('Allow', rfc='14.7')
-    #vary = List('Vary', rfc='14.44')
+    #allow = List(b'Allow', rfc='14.7')
+    #vary = List(b'Vary', rfc='14.44')
     
-    # language = List('Content-Language', rfc='14.12')
-    location = ReaderWriter('Content-Location', rfc='14.14')
-    hash = ContentMD5('Content-MD5', rfc='14.16')
-    # ranges = AcceptRanges('Accept-Ranges', rfc='14.16')
-    # range = ContentRange('Content-Range', rfc='14.16')
-    length = ContentLength('Content-Length', rfc='14.17')
+    # language = List(b'Content-Language', rfc='14.12')
+    location = ReaderWriter(b'Content-Location', rfc='14.14')
+    hash = ContentMD5(b'Content-MD5', rfc='14.16')
+    # ranges = AcceptRanges(b'Accept-Ranges', rfc='14.16')
+    # range = ContentRange(b'Content-Range', rfc='14.16')
+    length = ContentLength(b'Content-Length', rfc='14.17')
     
     def __init__(self, request=None, **kw):
         self.headers = CaseInsensitiveDict()
@@ -80,10 +80,10 @@ class Response(object):
             self.environ = request
             self.request = None
         
-        for name, value in kw.iteritems():
+        for name in kw:
             if not hasattr(self, name):
                 raise AttributeError('Unknown attribute %r.' % (name, ))
-            setattr(self, name, value)
+            setattr(self, name, kw[name])
         
         super(Response, self).__init__()
     
@@ -113,7 +113,7 @@ class Response(object):
     def final(self, value):
         self._final = self._final or bool(value)
     
-    @x.deleter
+    @final.deleter
     def final(self):
         return
     
@@ -132,7 +132,7 @@ class Response(object):
             
             body = generator(body)
         
-        return WSGIData(binary(self.status), [(n, v) for n, v in self.headers.iteritems()], body)
+        return WSGIData(unicode(self.status).encode('ascii'), [(n, v) for n, v in self.headers.items()], body)
     
     def __call__(self, environ=None, start_response=None):
         """Process the headers and content body and return a 3-tuple of status, header list, and iterable body.

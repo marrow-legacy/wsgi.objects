@@ -4,8 +4,7 @@
 
 from __future__ import unicode_literals
 
-
-__all__ = []
+from marrow.util.compat import bytestring, unicodestr
 
 
 
@@ -19,7 +18,7 @@ class HTTPException(Exception):
             start_resopnse(b'%d %s' % (self.code, self.status), self.headers)
             return self.body
         
-        return b'%d %s' % (self.code, self.status), self.headers, self.body
+        return bytestring(str(self.code), 'ascii') + b' ' + self.status, self.headers, [bytestring(self.body)]
 
 
 class HTTPError(HTTPException):
@@ -33,7 +32,9 @@ class HTTPError(HTTPException):
 </html>
 '''
     
-    def __init__(self, explanation, detail):
+    def __init__(self, explanation='', detail=''):
+        super(HTTPError, self).__init__([], None)
+        
         if explanation:
             self.explanation = explanation
         self.detail = detail
@@ -45,9 +46,9 @@ class HTTPError(HTTPException):
             explanation = self.explanation.format(**vars)
             self.body = self.template.format(
                     code = self.code,
-                    status = self.status,
-                    explanation = explanation,
-                    detail = self.detail
+                    status = unicodestr(self.status),
+                    explanation = unicodestr(explanation),
+                    detail = unicodestr(self.detail)
                 )
         
         return super(HTTPError, self).__call__(environ)
