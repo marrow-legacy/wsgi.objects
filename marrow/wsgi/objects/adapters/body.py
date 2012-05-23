@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from marrow.util.compat import binary, unicode
+from marrow.util.compat import binary, bytestring, unicode
 from marrow.wsgi.objects.adapters.base import *
 
 

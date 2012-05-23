@@ -3,7 +3,12 @@
 import re
 import sys
 import urllib
-import urlparse
+
+try:
+    import urlparse
+except ImportError:
+    from urllib import parse as urlparse
+
 import cgi
 
 from weakref import proxy
@@ -24,6 +29,9 @@ SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 class Request(object):
     _decode_param_names = False
     _body_limit = 10*1024
+    
+    rw = True
+    final = False
     
     # body = RequestBody('wsgi.input')
     length = Int('CONTENT_LENGTH', None, rfc='14.13')
@@ -65,9 +73,8 @@ class Request(object):
         
         self.environ = environ
         
-        for name, value in kw.iteritems():
-            setattr(self, name, value)
-    
+        for name in kw:
+            setattr(self, name, kw[name])
     
     def __repr__(self):
         try:
@@ -162,7 +169,7 @@ class Request(object):
 class LocalRequest(Request):
     """A blank request environment suitable for automated testing."""
     
-    def __init__(self, environ=None, path=binary('/'), POST=None, **kw):
+    def __init__(self, environ=None, path=b'/', POST=None, **kw):
         """Initialize a blank environment.
         
         The path argument may be a full URL or simple urlencoded path.

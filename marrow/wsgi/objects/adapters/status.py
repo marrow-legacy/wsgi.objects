@@ -1,5 +1,9 @@
 # encoding: utf-8
 
+from __future__ import unicode_literals
+
+from marrow.util.compat import basestring
+
 __all__ = ['_reasons', '_codes', 'Status']
 
 
@@ -66,7 +70,7 @@ _reasons = {
         510: 'Not Extended',
     }
 
-_codes = dict([(k, j) for j, k in _reasons.iteritems()])
+_codes = dict([(k, j) for j, k in _reasons.items()])
 
 
 class Status(object):

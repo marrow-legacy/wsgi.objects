@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 
-from marrow.util.compat import binary, unicode, IO, parse_qsl
+from marrow.util.compat import binary, unicode, IO, parse_qsl, bytestring, unicodestr
 from marrow.util.bunch import Bunch, MultiBunch
 from marrow.util.insensitive import CaseInsensitiveDict
 from marrow.util.object import NoDefault
@@ -32,7 +32,7 @@ class Response(object):
     # body = RequestBody()
     conditional = False
     
-    defaults = Bunch(status=200, mime='text/html')
+    defaults = Bunch(status=200, mime='text/html', encoding='utf-8')
     
     mime = ContentType('Content-Type')
     encoding = Charset('Content-Type')
@@ -80,10 +80,11 @@ class Response(object):
             self.environ = request
             self.request = None
         
-        for name, value in kw.iteritems():
+        for name in kw:
             if not hasattr(self, name):
                 raise AttributeError('Unknown attribute %r.' % (name, ))
-            setattr(self, name, value)
+            
+            setattr(self, name, kw[value])
         
         super(Response, self).__init__()
     
@@ -113,12 +114,13 @@ class Response(object):
     def final(self, value):
         self._final = self._final or bool(value)
     
-    @x.deleter
+    @final.deleter
     def final(self):
         return
     
     @property
     def wsgi(self):
+        headers = self.headers
         body = self.body
         
         if isinstance(body, binary): body = [body]
@@ -132,7 +134,7 @@ class Response(object):
             
             body = generator(body)
         
-        return WSGIData(binary(self.status), [(n, v) for n, v in self.headers.iteritems()], body)
+        return WSGIData(binary(unicode(self.status), 'ascii'), [(bytestring(n, self.encoding), bytestring(headers[n], self.encoding)) for n in headers], body)
     
     def __call__(self, environ=None, start_response=None):
         """Process the headers and content body and return a 3-tuple of status, header list, and iterable body.

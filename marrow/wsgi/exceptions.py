@@ -4,6 +4,8 @@
 
 from __future__ import unicode_literals
 
+from marrow.util.compat import binary, unicode
+
 
 __all__ = []
 
@@ -15,11 +17,14 @@ class HTTPException(Exception):
         self.body = body
     
     def __call__(self, environ, start_response=None):
-        if start_response:
-            start_resopnse(b'%d %s' % (self.code, self.status), self.headers)
-            return self.body
+        code = binary(str(self.code), 'ascii')
+        status = self.status
         
-        return b'%d %s' % (self.code, self.status), self.headers, self.body
+        if start_response:
+            start_response(code + b' ' + status, self.headers)
+            return [self.body]
+        
+        return code + b' ' + status, self.headers, [self.body]
 
 
 class HTTPError(HTTPException):
@@ -33,27 +38,26 @@ class HTTPError(HTTPException):
 </html>
 '''
     
-    def __init__(self, explanation, detail):
-        if explanation:
-            self.explanation = explanation
+    def __init__(self, explanation='', detail=''):
+        self.explanation = explanation
         self.detail = detail
         self.headers = [(b'Content-Type', b'text/html; charset=iso-8859-1')]
     
-    def __call__(self, environ):
+    def __call__(self, environ, start_response=None):
         if self.template:
             vars = dict([(k, v) for k, v in environ.items()])
             explanation = self.explanation.format(**vars)
             self.body = self.template.format(
                     code = self.code,
-                    status = self.status,
+                    status = unicode(self.status, 'ascii'),
                     explanation = explanation,
                     detail = self.detail
-                )
+                ).encode('iso-8859-1')
         
-        return super(HTTPError, self).__call__(environ)
+        return super(HTTPError, self).__call__(environ, start_response)
     
     def __str__(self):
-        return self.detail or self.explanation
+        return self.detail or self.explanation or repr(self)
 
 
 

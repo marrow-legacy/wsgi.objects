@@ -3,7 +3,7 @@
 import re
 import hashlib
 
-from marrow.util.compat import binary, unicode
+from marrow.util.compat import binary, unicode, bytestring
 from marrow.util.object import NoDefault
 
 from marrow.wsgi.objects.adapters.base import *
@@ -11,7 +11,7 @@ from marrow.wsgi.objects.adapters.base import *
 
 __all__ = ['ContentLength', 'ContentMD5', 'ContentType', 'Charset']
 
-CHARSET_RE = re.compile(r';\s*charset=([^;]*)', re.I)
+CHARSET_RE = re.compile(br';\s*charset=([^;]*)', re.I)
 
 
 
@@ -43,21 +43,24 @@ class ContentType(ReaderWriter):
     If you leave parameters off when assigning a value then existing parameters will be preserved.
     """
     
-    default = binary('')
+    default = b''
     
     def __get__(self, obj, cls, strip=True):
         value = super(ContentType, self).__get__(obj, cls)
         if not value: return None
-        return value.split(';', 1)[0] if strip else value
+        return value.split(b';', 1)[0] if strip else value
     
     def __set__(self, obj, value):
-        value = binary(value) if value is not None else ''
+        value = value or b''
         
-        if ';' not in value:
+        if isinstance(value, unicode):
+            value = binary(value, 'ascii')
+        
+        if b';' not in value:
             original = super(ContentType, self).__get__(obj, None)
             
-            if ';' in original:
-                value += ';' + original.split(';', 1)[1]
+            if b';' in original:
+                value += b';' + original.split(b';', 1)[1]
         
         super(ContentType, self).__set__(obj, value)
 
@@ -77,7 +80,7 @@ class Charset(ReaderWriter):
     no error).
     """
     
-    default = binary('; charset="utf8"')
+    default = b'; charset="utf8"'
     
     def __get__(self, obj, cls):
         content_type = super(Charset, self).__get__(obj, cls)
@@ -86,8 +89,8 @@ class Charset(ReaderWriter):
         charset_match = CHARSET_RE.search(content_type)
         
         if charset_match:
-            result = charset_match.group(1).strip('"').strip()
-            return result
+            result = charset_match.group(1).strip(b'"').strip()
+            return result.decode('ascii')
         
         return None
     
@@ -96,7 +99,7 @@ class Charset(ReaderWriter):
             self.__delete__(obj)
             return
         
-        value = binary(value)
+        value = binary(value, 'ascii')
         content_type = super(Charset, self).__get__(obj, None)
         charset_match = CHARSET_RE.search(content_type) if content_type else None
         
@@ -108,14 +111,14 @@ class Charset(ReaderWriter):
         #     content_type += ', charset="%s"' % charset
         
         elif content_type:
-            content_type += '; charset="%s"' % value
+            content_type += b'; charset="' + value + b'"'
         
         else:
-            content_type = '; charset="%s"' % value
+            content_type = b'; charset="' + value + b'"'
         
         super(Charset, self).__set__(obj, content_type)
     
     def __delete__(self, obj):
         content_type = CHARSET_RE.sub('', super(Charset, self).__get__(obj, None))
-        new_content_type = new_content_type.rstrip().rstrip(';').rstrip(',')
+        new_content_type = new_content_type.rstrip().rstrip(b';').rstrip(b',')
         super(Charset, self).__set__(obj, new_content_type)
