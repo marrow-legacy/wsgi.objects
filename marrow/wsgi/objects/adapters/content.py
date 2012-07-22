@@ -99,7 +99,7 @@ class Charset(ReaderWriter):
             self.__delete__(obj)
             return
         
-        value = binary(value, 'ascii')
+        value = bytestring(value, 'ascii')
         content_type = super(Charset, self).__get__(obj, None)
         charset_match = CHARSET_RE.search(content_type) if content_type else None
         
