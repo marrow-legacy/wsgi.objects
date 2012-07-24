@@ -57,17 +57,6 @@ class Request(object):
     kwargs = RoutingKwargs('wsgiorg.routing_args')
     fragment = ReaderWriter('FRAGMENT')
     
-    class __metaclass__(type):
-        def __call__(cls, environ, *args, **kw):
-            if not isinstance(environ, dict):
-                # environ object is request-local pack
-                environ = environ.environ
-            
-            if 'marrow.request' not in environ:
-                environ['marrow.request'] = type.__call__(cls, environ, *args, **kw)
-            
-            return environ['marrow.request']
-    
     def __init__(self, environ, **kw):
         super(Request, self).__init__()
         
