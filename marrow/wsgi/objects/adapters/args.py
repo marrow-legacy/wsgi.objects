@@ -1,9 +1,11 @@
 # encoding: utf-8
 
 try:
-    from urlparse import parse_qsl
-except ImportError:
     from urllib.parse import parse_qsl
+except ImportError:
+    from urlparse import parse_qsl as parse_qsl_
+    parse_qsl = lambda qs, keep_blank_values, strict_parsing, encoding: \
+            [(k.decode(encoding, 'replace'), v.decode(encoding, 'replace')) for k, v in parse_qsl_(qs, keep_blank_values, strict_parsing)]
 
 from marrow.util.bunch import MultiBunch
 from marrow.util.path import Path as PathObj

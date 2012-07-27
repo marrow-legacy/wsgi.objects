@@ -134,7 +134,7 @@ class Response(object):
             
             body = generator(body)
         
-        return WSGIData(binary(unicode(self.status), 'ascii'), [(bytestring(n, self.encoding), bytestring(headers[n], self.encoding)) for n in headers], body)
+        return WSGIData(bytestring(unicode(self.status), 'ascii'), [(bytestring(n, self.encoding), bytestring(headers[n], self.encoding)) for n in headers], body)
     
     def __call__(self, environ=None, start_response=None):
         """Process the headers and content body and return a 3-tuple of status, header list, and iterable body.
