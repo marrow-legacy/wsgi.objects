@@ -1,21 +1,19 @@
 # encoding: utf-8
 
 import re
-import sys
-import urllib
 
 try:
     import urlparse
+    from urllib import unquote, urlencode
 except ImportError:
     from urllib import parse as urlparse
+    from urllib.parse import unquote, urlencode
 
-import cgi
+#from weakref import proxy
 
-from weakref import proxy
-
-from marrow.util.compat import binary, unicode, IO, parse_qsl
+from marrow.util.compat import binary, IO
 from marrow.util.object import NoDefault
-from marrow.util.insensitive import CaseInsensitiveDict
+#from marrow.util.insensitive import CaseInsensitiveDict
 
 from marrow.wsgi.objects.adapters import *
 
@@ -33,7 +31,7 @@ class Request(object):
     rw = True
     final = False
     
-    # body = RequestBody('wsgi.input')
+    body = RequestBody('wsgi.input')
     length = Int('CONTENT_LENGTH', None, rfc='14.13')
     mime = ContentType('CONTENT_TYPE', None)
     charset = Charset('CONTENT_TYPE')
@@ -51,8 +49,8 @@ class Request(object):
     user = ReaderWriter('REMOTE_USER', default=None) # TODO: abstract this out to remote.user and remote.addr
     address = ReaderWriter('REMOTE_ADDR', default=None)
     
-    parameters = ReaderWriter('PARAMETERS')
-    query = ReaderWriter('QUERY_STRING')
+    parameters = ReaderWriter('PARAMETERS', default='')
+    query = ReaderWriter('QUERY_STRING', default='')
     args = RoutingArgs('wsgiorg.routing_args')
     kwargs = RoutingKwargs('wsgiorg.routing_args')
     fragment = ReaderWriter('FRAGMENT')
@@ -158,7 +156,7 @@ class Request(object):
 class LocalRequest(Request):
     """A blank request environment suitable for automated testing."""
     
-    def __init__(self, environ=None, path=b'/', POST=None, **kw):
+    def __init__(self, environ=None, path='/', POST=None, **kw):
         """Initialize a blank environment.
         
         The path argument may be a full URL or simple urlencoded path.
@@ -179,7 +177,7 @@ class LocalRequest(Request):
         elif path and '?' in path:
             path, query_string = path.split('?', 1)
 
-        path = urllib.unquote(path)
+        path = unquote(path)
         
         # TODO: Update this to better conform to PEP 444.
         env = {
@@ -194,7 +192,7 @@ class LocalRequest(Request):
                 'CONTENT_LENGTH': '0',
                 'wsgi.version': (2, 0),
                 'wsgi.url_scheme': scheme,
-                'wsgi.input': IO(''),
+                'wsgi.input': IO(),
                 # 'wsgi.errors': sys.stderr,
                 'wsgi.multithread': False,
                 'wsgi.multiprocess': False,
@@ -203,10 +201,10 @@ class LocalRequest(Request):
 
         if POST is not None:
             env['REQUEST_METHOD'] = 'POST'
-            body = urllib.urlencode(POST.items() if hasattr(POST, 'items') else POST)
+            body = urlencode(POST if isinstance(POST, dict) else POST).encode('utf8')
             env['wsgi.input'] = IO(body)
             env['CONTENT_LENGTH'] = binary(len(body))
-            env['CONTENT_TYPE'] = 'application/x-www-form-urlencoded'
+            env['CONTENT_TYPE'] = b'application/x-www-form-urlencoded'
 
         if environ:
             env.update(environ)

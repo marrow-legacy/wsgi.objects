@@ -2,6 +2,11 @@
 
 import cgi
 
+try:
+    from urllib import parse_qsl
+except ImportError:
+    from urllib.parse import parse_qsl
+
 from marrow.util.bunch import MultiBunch
 from marrow.util.object import NoDefault
 from marrow.util.path import Path as PathObj
@@ -28,25 +33,19 @@ def _args_kwargs_default(self, obj):
     """Parse PATH_INFO, the response body, and QUERY_STRING to produce args and kwargs."""
     
     args = tuple(obj.remainder)
-    
     kwargs = MultiBunch()
     
-    # Process QUERY_STRING arguments.
+    encoding = obj.charset or "utf-8"
     
-    # Process HTTP body arguments, if available.
+    kwargs.update(parse_qsl(obj.parameters, True, False, encoding))
+    kwargs.update(parse_qsl(obj.query, True, False, encoding))
     
-    if obj.method in ('POST', 'PUT') and obj.mime in ('', None, 'application/x-www-form-urlencoded', 'multipart/form-data'):
-        fs_environ = obj.copy()
-        fs_environ.setdefault('CONTENT_LENGTH', '0')
-        fs_environ['QUERY_STRING'] = ''
-        
-        fs = cgi.FieldStorage(fp=obj.body, environ=fs_environ, keep_blank_values=True)
-        
-        if fs.list:
-            for field in fs.list:
-                if field in kwargs: del kwargs[field]
-                
-                kwargs[field] = field if field.filename else field.value
+    # TODO: THIS IS INSECURE AND BAD AND FULL OF BADNESS
+    # But cgi.FieldStorage sucks zombies.
+    if obj.method in ('POST', 'PUT') and obj.mime in ('', None, 'application/x-www-form-urlencoded'):  # , 'multipart/form-data'
+        print("ADA")
+        obj.body.seek(0)
+        kwargs.update(parse_qsl(obj.body.read().decode(encoding), True, False, encoding))
     
     return (args, kwargs)
 
@@ -68,6 +67,8 @@ class RoutingArgs(ReaderWriter):
     def __delete__(self, obj):
         if not self.__get__(obj, None):
             return super(RoutingArgs, self).__delete__(obj)
+
+        # remainder
 
         obj['wsgiorg.routing_args'] = ((), obj.kwargs)
 

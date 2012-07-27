@@ -47,6 +47,7 @@ class ContentType(ReaderWriter):
     
     def __get__(self, obj, cls, strip=True):
         value = super(ContentType, self).__get__(obj, cls)
+        __import__('pprint').pprint((">>>", value))
         if not value: return None
         return value.split(b';', 1)[0] if strip else value
     
