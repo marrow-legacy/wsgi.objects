@@ -12,8 +12,8 @@ __all__ = []
 
 
 class HTTPException(Exception):
-    def __init__(self, headers, body):
-        self.headers = headers
+    def __init__(self, headers=None, body=None):
+        self.headers = headers or []
         self.body = body
     
     def __call__(self, environ, start_response=None):
@@ -24,7 +24,7 @@ class HTTPException(Exception):
             start_response(code + b' ' + status, self.headers)
             return [self.body]
         
-        return code + b' ' + status, self.headers, [self.body]
+        return code + b' ' + status, self.headers, [self.body or b""]
 
 
 class HTTPError(HTTPException):
@@ -39,12 +39,15 @@ class HTTPError(HTTPException):
 '''
     
     def __init__(self, explanation='', detail=''):
+        super(HTTPError, self).__init__([
+                (b'Content-Type', b'text/html; charset=iso-8859-1')
+            ])
+        
         self.explanation = explanation
         self.detail = detail
-        self.headers = [(b'Content-Type', b'text/html; charset=iso-8859-1')]
     
     def __call__(self, environ, start_response=None):
-        if self.template:
+        if self.template and not self.body:
             vars = dict([(k, v) for k, v in environ.items()])
             explanation = self.explanation.format(**vars)
             self.body = self.template.format(
@@ -178,9 +181,20 @@ class HTTPCreated(HTTPSuccess):
 class HTTPAccepted(HTTPSuccess):
     """202 Accepted
     
-    The request has been accepted for processing, but the processing has not been completed. The request might or might not eventually be acted upon, as it might be disallowed when processing actually takes place. There is no facility for re-sending a status code from an asynchronous operation such as this.
+    The request has been accepted for processing, but the processing has not
+    been completed. The request might or might not eventually be acted upon,
+    as it might be disallowed when processing actually takes place. There is
+    no facility for re-sending a status code from an asynchronous operation
+    such as this.
     
-    The 202 response is intentionally non-committal. Its purpose is to allow a server to accept a request for some other process (perhaps a batch-oriented process that is only run once per day) without requiring that the user agent's connection to the server persist until the process is completed. The entity returned with this response SHOULD include an indication of the request's current status and either a pointer to a status monitor or some estimate of when the user can expect the request to be fulfilled.
+    The 202 response is intentionally non-committal. Its purpose is to allow
+    a server to accept a request for some other process (perhaps a
+    batch-oriented process that is only run once per day) without requiring
+    that the user agent's connection to the server persist until the process
+    is completed. The entity returned with this response SHOULD include an
+    indication of the request's current status and either a pointer to a
+    status monitor or some estimate of when the user can expect the request
+    to be fulfilled.
     
     For information, see RFC 2616 §10.2.3:
     http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.3
@@ -287,9 +301,13 @@ class HTTPRedirection(HTTPException):
     http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3
     """
     
-    def __init__(self, headers=[], body=[], location=None):
+    def __init__(self, location, headers=None, body=None):
         if location:
+            if not headers:
+                headers = []
+            
             headers.append((b'Location', location))
+        
         HTTPException.__init__(self, headers, body)
 
 
@@ -484,9 +502,9 @@ class HTTPClientError(HTTPError):
     """"""
     pass
 
+
 class HTTPBadRequest(HTTPClientError):
-    """
-    Code: 401
+    """400 Bad Request
     
     The request could not be understood by the server due to malformed syntax.
     """
@@ -497,8 +515,7 @@ class HTTPBadRequest(HTTPClientError):
 
 
 class HTTPUnauthorized(HTTPClientError):
-    """
-    Code: 401
+    """401 Unauthorized
     
     The request requires user authentication.
     
@@ -514,8 +531,7 @@ class HTTPUnauthorized(HTTPClientError):
 
 
 class HTTPForbidden(HTTPClientError):
-    """
-    Code: 403
+    """403 Forbidden
     
     The server understood the request, but is refusing to fulfill it.
     Authorization will not help and the request SHOULD NOT be repeated. If the
@@ -533,8 +549,7 @@ class HTTPForbidden(HTTPClientError):
 
 
 class HTTPNotFound(HTTPClientError):
-    """
-    Code: 404
+    """404 Not Found
     
     The server has not found anything matching the Request-URI. No indication
     is given of whether the condition is temporary or permanent. The 410 (Gone)
@@ -551,8 +566,7 @@ class HTTPNotFound(HTTPClientError):
 
 
 class HTTPMethodNotAllowed(HTTPClientError):
-    """
-    Code: 405
+    """405 Method Not Allowed
     
     The method specified in the Request-Line is not allowed for the resource
     identified by the Request-URI.
@@ -566,8 +580,7 @@ class HTTPMethodNotAllowed(HTTPClientError):
 
 
 class HTTPNotAcceptable(HTTPClientError):
-    """
-    Code: 406
+    """406 Not Acceptable
     
     The resource identified by the request is only capable of generating
     response entities which have content characteristics not acceptable
@@ -583,8 +596,7 @@ class HTTPNotAcceptable(HTTPClientError):
 
 
 class HTTPProxyAuthenticationRequired(HTTPClientError):
-    """
-    Code: 407
+    """407 Proxy Authentication Required
     
     This code is similar to 401 (Unauthorized), but indicates that the client
     must first authenticate itself with the proxy.
@@ -598,8 +610,7 @@ class HTTPProxyAuthenticationRequired(HTTPClientError):
 
 
 class HTTPRequestTimeout(HTTPClientError):
-    """
-    Code: 408
+    """408 Request Timeout
     
     The client did not produce a request within the time that the server was
     prepared to wait.
@@ -613,8 +624,7 @@ class HTTPRequestTimeout(HTTPClientError):
 
 
 class HTTPConflict(HTTPClientError):
-    """
-    Code: 409
+    """409 Conflict
     
     The request could not be completed due to a conflict with the current state
     of the resource.
@@ -628,8 +638,7 @@ class HTTPConflict(HTTPClientError):
 
 
 class HTTPGone(HTTPClientError):
-    """
-    Code: 410
+    """410 Gone
     
     The requested resource is no longer available at the server and no
     forwarding address is known. This condition is expected to be considered
@@ -644,8 +653,7 @@ class HTTPGone(HTTPClientError):
 
 
 class HTTPLengthRequired(HTTPClientError):
-    """
-    Code: 411
+    """411 Length Required
     
     The server refuses to accept the request without a defined Content-Length.
     
@@ -658,8 +666,7 @@ class HTTPLengthRequired(HTTPClientError):
 
 
 class HTTPPreconditionFailed(HTTPClientError):
-    """
-    Code: 412
+    """412 Precondition Failed
     
     The precondition given in one or more of the request-header fields
     evaluated to false when it was tested on the server. This response code
@@ -676,8 +683,7 @@ class HTTPPreconditionFailed(HTTPClientError):
 
 
 class HTTPRequestEntityTooLarge(HTTPClientError):
-    """
-    Code: 413
+    """413 Request Entity Too Large
     
     The server is refusing to process a request because the request entity is
     larger than the server is willing or able to process.
@@ -691,8 +697,7 @@ class HTTPRequestEntityTooLarge(HTTPClientError):
 
 
 class HTTPRequestURITooLong(HTTPClientError):
-    """
-    Code: 414
+    """414 Request URI Too Long
     
     The server is refusing to service the request because the Request-URI is
     longer than the server is willing to interpret.
@@ -706,8 +711,7 @@ class HTTPRequestURITooLong(HTTPClientError):
 
 
 class HTTPUnsupportedMediaType(HTTPClientError):
-    """
-    Code: 415
+    """415 Unsupported Media Type
     
     The server is refusing to service the request because the entity of the
     request is in a format not supported by the requested resource for the
@@ -722,8 +726,7 @@ class HTTPUnsupportedMediaType(HTTPClientError):
 
 
 class HTTPRequestedRangeNotSatisfiable(HTTPClientError):
-    """
-    Code: 416
+    """416 Requested Rane Not Satisfiable
     
     The server is refusing to service the request because the entity of the
     request is in a format not supported by the requested resource for the
@@ -738,8 +741,7 @@ class HTTPRequestedRangeNotSatisfiable(HTTPClientError):
 
 
 class HTTPExpectationFailed(HTTPClientError):
-    """
-    Code: 417
+    """417 Expectation Failed
     
     The expectation given in an Expect request-header field could not be met by
     this server, or, if the server is a proxy, the server has unambiguous
@@ -762,8 +764,7 @@ class HTTPServerError(HTTPError):
 
 
 class HTTPInternalServerError(HTTPServerError):
-    """
-    Code: 500
+    """500 Internal Server Error
     
     The server encountered an unexpected condition which prevented it from
     fulfilling the request.
@@ -779,8 +780,7 @@ class HTTPInternalServerError(HTTPServerError):
 
 
 class HTTPNotImplemented(HTTPServerError):
-    """
-    Code: 501
+    """501 Not Implemented
     
     The server does not support the functionality required to fulfill the request.
     This is the appropriate response when the server does not recognize the request
@@ -795,8 +795,7 @@ class HTTPNotImplemented(HTTPServerError):
 
 
 class HTTPBadGateway(HTTPServerError):
-    """
-    Code: 502
+    """502 Bad Gateway
     
     The server, while acting as a gateway or proxy, received an invalid response
     from the upstream server it accessed in attempting to fulfill the request. 
@@ -810,8 +809,7 @@ class HTTPBadGateway(HTTPServerError):
 
 
 class HTTPServiceUnavailable(HTTPServerError):
-    """
-    Code: 503
+    """503 Service Unavailable
     
     The server is currently unable to handle the request due to a temporary
     overloading or maintenance of the server.
@@ -825,8 +823,7 @@ class HTTPServiceUnavailable(HTTPServerError):
 
 
 class HTTPGatewayTimeout(HTTPServerError):
-    """
-    Code: 504
+    """504 Gateway Timeout
     
     The server, while acting as a gateway or proxy, did not receive a timely
     response from the upstream server specified by the URI (e.g. HTTP, FTP, LDAP)
@@ -842,8 +839,7 @@ class HTTPGatewayTimeout(HTTPServerError):
 
 
 class HTTPVersionNotSupported(HTTPServerError):
-    """
-    Code: 505
+    """505 Version Not Supported
     
     The server does not support, or refuses to support, the HTTP protocol
     version that was used in the request message. 
@@ -855,17 +851,15 @@ class HTTPVersionNotSupported(HTTPServerError):
     status = b'HTTP Version Not Supported'
     explanation = 'The HTTP version is not supported.'
 
-#
-# WebDAV exceptions (RFC 2518)
 
+# WebDAV exceptions (RFC 2518)
 
 class WebDAVException(Exception):
     pass
 
 
 class HTTPUnprocessableEntity(HTTPClientError, WebDAVException):
-    """
-    Code: 422; Only for WebDAV
+    """422 Unprocessable Entity
     
     The 422 (Unprocessable Entity) status code means the server understands the
     content type of the request entity, and the syntax of the request entity is
@@ -880,8 +874,7 @@ class HTTPUnprocessableEntity(HTTPClientError, WebDAVException):
 
 
 class HTTPLocked(HTTPClientError, WebDAVException):
-    """
-    Code: 423; Only for WebDAV
+    """423 Locked
     
     The 423 (Locked) status code means the source or destination resource of a
     method is locked.
@@ -895,8 +888,7 @@ class HTTPLocked(HTTPClientError, WebDAVException):
 
 
 class HTTPFailedDependency(HTTPClientError, WebDAVException):
-    """
-    Code: 424; Only for WebDAV
+    """424 Failed Dependency
     
     The 424 (Failed Dependency) status code means that the method could not be
     performed on the resource because the requested action depended on another
@@ -912,8 +904,7 @@ class HTTPFailedDependency(HTTPClientError, WebDAVException):
 
 
 class HTTPInsufficientStorage(HTTPServerError, WebDAVException):
-    """
-    Code: 507; Only for WebDAV
+    """507 Insufficient Storage
     
     The 507 (Insufficient Storage) status code means the method could not be
     performed on the resource because the server is unable to store the
