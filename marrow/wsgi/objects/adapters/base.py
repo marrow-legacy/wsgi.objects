@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+from marrow.util.compat import binary
 from marrow.util.object import NoDefault
 
 
