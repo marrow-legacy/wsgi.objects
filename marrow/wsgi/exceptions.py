@@ -4,7 +4,7 @@
 
 from __future__ import unicode_literals
 
-from marrow.util.compat import binary, unicode
+from marrow.util.compat import bytestring, unicode
 
 
 __all__ = []
@@ -17,7 +17,7 @@ class HTTPException(Exception):
         self.body = body
     
     def __call__(self, environ, start_response=None):
-        code = binary(str(self.code), 'ascii')
+        code = bytestring(str(self.code), 'ascii')
         status = self.status
         
         if start_response:
@@ -528,7 +528,7 @@ class HTTPForbidden(HTTPClientError):
     http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1
     """
     code = 403
-    status = b'Unauthorized'
+    status = b'Forbidden'
     explanation = 'Access was denied to this resource.'
 
 
