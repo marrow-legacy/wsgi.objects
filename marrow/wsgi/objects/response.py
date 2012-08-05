@@ -7,7 +7,9 @@ from marrow.util.bunch import Bunch, MultiBunch
 from marrow.util.insensitive import CaseInsensitiveDict
 from marrow.util.object import NoDefault
 
-from marrow.wsgi.objects.adapters import *
+from marrow.wsgi.objects.adapters.base import ReaderWriter, Int
+from marrow.wsgi.objects.adapters.content import ContentType, ContentEncoding
+from marrow.wsgi.objects.adapters.status import Status
 
 
 log = __import__('logging').getLogger(__name__)
@@ -35,7 +37,7 @@ class Response(object):
     defaults = Bunch(status=200, mime='text/html', encoding='utf-8')
     
     mime = ContentType('Content-Type')
-    encoding = Charset('Content-Type')
+    encoding = ContentEncoding('Content-Type')
     disposition = ReaderWriter('Content-Disposition', rfc='14.11')
     pragma = ReaderWriter('Pragma', rfc='14.32')
     server = ReaderWriter('Server', rfc='14.38')
@@ -58,10 +60,10 @@ class Response(object):
     
     # language = List('Content-Language', rfc='14.12')
     location = ReaderWriter('Content-Location', rfc='14.14')
-    hash = ContentMD5('Content-MD5', rfc='14.16')
+    hash = ReaderWriter('Content-MD5', rfc='14.16')
     # ranges = AcceptRanges('Accept-Ranges', rfc='14.16')
     # range = ContentRange('Content-Range', rfc='14.16')
-    length = ContentLength('Content-Length', rfc='14.17')
+    length = Int('Content-Length', rfc='14.17')
     
     def __init__(self, request=None, **kw):
         self.headers = CaseInsensitiveDict()

@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from marrow.util.compat import binary
+from marrow.util.compat import unicode
 from marrow.util.object import NoDefault
 
 
@@ -24,9 +24,12 @@ class ReaderWriter(object):
         self.rfc = rfc
     
     def __repr__(self):
-        return "%s()"
+        return '{0}("{1}")'.format(self.__class__.__name__, self.header)
     
     def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        
         try:
             return obj[self.header]
         
@@ -49,7 +52,7 @@ class ReaderWriter(object):
         raise AttributeError('WSGI environment does not contain %s key.' % (self.header, ))
     
     def __set__(self, obj, value):
-        if not self.rw or obj.final:
+        if not self.rw or getattr(obj, 'final', False):
             raise AttributeError('%s is a read-only value.' % (self.header, ))
         
         if value is None:
@@ -59,7 +62,7 @@ class ReaderWriter(object):
         obj[self.header] = value
     
     def __delete__(self, obj):
-        if not self.rw or obj.final:
+        if not self.rw or getattr(obj, 'final', False):
             raise AttributeError('%s is a read-only value.' % (self.header, ))
         
         del obj[self.header]
@@ -67,12 +70,22 @@ class ReaderWriter(object):
 
 class Int(ReaderWriter):
     def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        
         try:
             return int(super(Int, self).__get__(obj, cls))
         except AttributeError:
             return None
-        except TypeError:
+        except ValueError:
             return None
     
     def __set__(self, obj, value):
-        super(Int, self).__set__(obj, binary(value))
+        super(Int, self).__set__(obj, unicode(value).encode('ascii'))
+
+
+class Host(ReaderWriter):
+    """Host name provided in HTTP_HOST, if present, SERVER_NAME otherwise."""
+
+    def default(self, obj):
+        return (obj[self.header] if self.header in obj else None) or (obj.server + ':' + obj.port)

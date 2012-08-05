@@ -1,40 +1,12 @@
 # encoding: utf-8
 
 import re
-import hashlib
 
-from marrow.util.compat import binary, unicode, bytestring
-from marrow.util.object import NoDefault
+from marrow.util.compat import bytestring
+from marrow.wsgi.objects.adapters.base import ReaderWriter
 
-from marrow.wsgi.objects.adapters.base import *
-
-
-__all__ = ['ContentLength', 'ContentMD5', 'ContentType', 'Charset']
 
 CHARSET_RE = re.compile(br';\s*charset=([^;]*)', re.I)
-
-
-
-class ContentLength(Int):
-    def default(self, obj):
-        if isinstance(obj.body, binary):
-            return len(obj.body)
-        
-        if isinstance(obj.body, unicode):
-            return len(obj.body.encode(obj.encoding))
-        
-        return -1
-
-
-class ContentMD5(ReaderWriter):
-    def default(self, obj):
-        if isinstance(obj.body, binary):
-            return hashlib.md5(obj.body).hexdigest()
-
-        if isinstance(obj.body, unicode):
-            return hashlib.md5(obj.body.encode(obj.encoding)).hexdigest()
-
-        return None
 
 
 class ContentType(ReaderWriter):
@@ -47,26 +19,23 @@ class ContentType(ReaderWriter):
     
     def __get__(self, obj, cls, strip=True):
         value = super(ContentType, self).__get__(obj, cls)
-        __import__('pprint').pprint((">>>", value))
         if not value: return None
         return value.split(b';', 1)[0] if strip else value
     
     def __set__(self, obj, value):
-        value = value or b''
-        
-        if isinstance(value, unicode):
-            value = binary(value, 'ascii')
+        value = bytestring(value, 'ascii') or b''
         
         if b';' not in value:
             original = super(ContentType, self).__get__(obj, None)
             
-            if b';' in original:
+            if original and b';' in original:
                 value += b';' + original.split(b';', 1)[1]
         
+        __import__('pprint').pprint((">>>", value))
         super(ContentType, self).__set__(obj, value)
 
 
-class Charset(ReaderWriter):
+class ContentEncoding(ReaderWriter):
     """Get the charset of the request.
 
     If the request was sent with a charset parameter on the
@@ -84,7 +53,7 @@ class Charset(ReaderWriter):
     default = b'; charset="utf8"'
     
     def __get__(self, obj, cls):
-        content_type = super(Charset, self).__get__(obj, cls)
+        content_type = super(ContentEncoding, self).__get__(obj, cls)
         if not content_type: return None
         
         charset_match = CHARSET_RE.search(content_type)
@@ -101,25 +70,21 @@ class Charset(ReaderWriter):
             return
         
         value = bytestring(value, 'ascii')
-        content_type = super(Charset, self).__get__(obj, None)
+        content_type = super(ContentEncoding, self).__get__(obj, None)
         charset_match = CHARSET_RE.search(content_type) if content_type else None
         
         if charset_match:
             content_type = content_type[:charset_match.start(1)] + value + content_type[charset_match.end(1):]
         
-        # TODO: Examine what action browsers take.
-        # elif ';' in content_type:
-        #     content_type += ', charset="%s"' % charset
-        
         elif content_type:
-            content_type += b'; charset="' + value + b'"'
+            content_type += b'; charset=' + value + b''
         
         else:
-            content_type = b'; charset="' + value + b'"'
+            content_type = b'; charset=' + value + b''
         
-        super(Charset, self).__set__(obj, content_type)
+        super(ContentEncoding, self).__set__(obj, content_type)
     
     def __delete__(self, obj):
-        content_type = CHARSET_RE.sub('', super(Charset, self).__get__(obj, None))
-        new_content_type = new_content_type.rstrip().rstrip(b';').rstrip(b',')
-        super(Charset, self).__set__(obj, new_content_type)
+        content_type = CHARSET_RE.sub(b'', super(ContentEncoding, self).__get__(obj, None) or b'')
+        new_content_type = content_type.rstrip().rstrip(b';').rstrip(b',')
+        super(ContentEncoding, self).__set__(obj, new_content_type)

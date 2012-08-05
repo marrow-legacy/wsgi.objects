@@ -1,8 +1,10 @@
 # encoding: utf-8
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division, print_function, absolute_import
 
-from marrow.util.compat import basestring
+import sys
+
+from marrow.util.compat import bytes, unicode
 
 __all__ = ['_reasons', '_codes', 'Status']
 
@@ -73,25 +75,96 @@ _reasons = {
 _codes = dict([(k, j) for j, k in _reasons.items()])
 
 
+
+class StatusValue(object):
+    __slots__ = ('numeric', 'text')
+    
+    def __init__(self, numeric, text):
+        super(StatusValue, self).__init__()
+        
+        if isinstance(text, bytes):
+            text = text.decode('ascii')
+        
+        self.numeric = numeric
+        self.text = text
+    
+    @property
+    def binary(self):
+        return self.string.encode('ascii')
+    
+    @property
+    def string(self):
+        return '%d %s' % (self.numeric, self.text)
+    
+    def __repr__(self):
+        return "Status({0}, '{1}')".format(self.numeric, self.text)
+    
+    def __int__(self):
+        return self.numeric
+    
+    if sys.version_info[0] == 3: # pragma: no cover
+        def __bytes__(self):
+            return self.binary
+        
+        def __str__(self):
+            return self.string
+    
+    else: # pragma: no cover
+        def __str__(self):
+            return self.binary
+        
+        def __unicode__(self):
+            return self.string
+
+
 class Status(object):
     def __init__(self, value=None):
-        if value is not None:
-            self.__set__(None, value)
-        
+        self.default = value
         super(Status, self).__init__()
+    
+    def __get__(self, obj, value):
+        if obj is None:
+            return self
+        
+        if not hasattr(obj, '_status'):
+            if not self.default:
+                return None
+            
+            self.__set__(obj, self.default)
+        
+        return obj._status
     
     def __set__(self, obj, value):
         if isinstance(value, int):
-            self.value = value
+            obj._status = StatusValue(value, _reasons[value])
+            return
         
-        elif isinstance(value, basestring):
-            self.value = _codes[value]
-    
-    def __str__(self):
-        return '%d %s' % (self.value, _reasons[self.value])
-    
-    def __repr__(self):
-        return repr(str(self))
-    
-    def __int__(self):
-        return self.value
+        if not value:
+            obj._status = None
+            return
+        
+        if isinstance(value, tuple):
+            obj._status = StatusValue(*value)
+            return
+        
+        if isinstance(value, bytes):
+            value = value.decode('ascii')
+        
+        if value.isdigit():
+            value = int(value)
+            if value not in _reasons:
+                raise ValueError("Invalid HTTP status numer: " + unicode(value))
+            obj._status = StatusValue(value, _reasons[value])
+            return
+        
+        numeric, _, text = value.partition(' ')
+        
+        if numeric.isdigit():
+            numeric = int(numeric)
+            obj._status = StatusValue(numeric, text)
+            return
+        
+        if value not in _codes:
+            raise ValueError("Invalid HTTP status name:" + value)
+        
+        obj._status = StatusValue(_codes[value], value)

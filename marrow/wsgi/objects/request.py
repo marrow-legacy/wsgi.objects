@@ -1,97 +1,44 @@
 # encoding: utf-8
 
+from __future__ import unicode_literals, division, print_function, absolute_import
+
 import re
 
 try:
-    import urlparse
-    from urllib import unquote, urlencode
+   import urlparse
+   from urllib import unquote, urlencode
 except ImportError:
-    from urllib import parse as urlparse
-    from urllib.parse import unquote, urlencode
+   from urllib import parse as urlparse
+   from urllib.parse import unquote, urlencode
 
-#from weakref import proxy
+from weakref import proxy
 
 from marrow.util.compat import binary, IO
 from marrow.util.object import NoDefault
-#from marrow.util.insensitive import CaseInsensitiveDict
+from marrow.util.insensitive import CaseInsensitiveDict
 
-from marrow.wsgi.objects.adapters import *
+from marrow.wsgi.objects.adapters.base import ReaderWriter, Int, Host
+from marrow.wsgi.objects.adapters.content import ContentType, ContentEncoding
 
-
-log = __import__('logging').getLogger(__name__)
-__all__ = ['Request', 'LocalRequest']
 
 SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
 
 
-class Request(object):
-    _decode_param_names = False
-    _body_limit = 10*1024
+class BareRequest(object):
+    """A bare request which proxies through to the underlying environment with dict-like access."""
     
-    rw = True
-    final = False
-    
-    body = RequestBody('wsgi.input')
-    length = Int('CONTENT_LENGTH', None, rfc='14.13')
-    mime = ContentType('CONTENT_TYPE', None)
-    charset = Charset('CONTENT_TYPE')
-    
-    protocol = ReaderWriter('SERVER_PROTOCOL')
-    method = ReaderWriter('REQUEST_METHOD')
-    scheme = ReaderWriter('wsgi.url_scheme')
-    path = Path('SCRIPT_NAME', default='')
-    remainder = Path('PATH_INFO', default='')
-    
-    host = Host('HTTP_HOST', rfc='14.23')
-    server = ReaderWriter('SERVER_NAME')
-    port = Int('SERVER_PORT')
-    
-    user = ReaderWriter('REMOTE_USER', default=None) # TODO: abstract this out to remote.user and remote.addr
-    address = ReaderWriter('REMOTE_ADDR', default=None)
-    
-    parameters = ReaderWriter('PARAMETERS', default='')
-    query = ReaderWriter('QUERY_STRING', default='')
-    args = RoutingArgs('wsgiorg.routing_args')
-    kwargs = RoutingKwargs('wsgiorg.routing_args')
-    fragment = ReaderWriter('FRAGMENT')
+    __slots__ = ('environ', )
     
     def __init__(self, environ, **kw):
-        super(Request, self).__init__()
+        super(BareRequest, self).__init__()
         
         self.environ = environ
         
         for name in kw:
             setattr(self, name, kw[name])
     
-    def __repr__(self):
-        try:
-            name = self.method + ' ' + str(self.path + self.remainder)
-        
-        except KeyError:
-            name = '(invalid WSGI environ)'
-        
-        return '<' + self.__class__.__name__ + ' ' + name + '>'
-    
-    def __str__(self, skip_body=False):
-        parts = [' '.join([self.method, self.url, self.protocol])]
-        
-        if self.method in ('PUT', 'POST'):
-            parts += ['', self.body]
-        
-        return '\n'.join(parts)
-    
-    
-    def get(self, name, default=NoDefault):
-        try:
-            value = self.environ[name]
-        
-        except:
-            if default is NoDefault:
-                raise
-            
-            value = default
-        
-        return value
+    def get(self, name, default=None):
+        return self.environ.get(name, default)
     
     def __getitem__(self, name):
         return self.environ[name]
@@ -102,6 +49,42 @@ class Request(object):
     def __delitem__(self, name):
         del self.environ[name]
     
+    def __repr__(self):
+        return '<' + self.__class__.__name__ + ' ' + str(id(self)) + '>'
+
+
+class Request(BareRequest):
+    _decode_param_names = False
+    _body_limit = 10 * 1024 * 1024  # 10 MiB before rejecting the request.
+    _body_spool_limit = 128 * 1024  # 128 KiB before spooling to disk.
+    
+    _writeable = True  # Can you alter the attributes of this object?
+    _final = False
+    
+    #body = RequestBody('wsgi.input')
+    length = Int('CONTENT_LENGTH', None, rfc='14.13')
+    mime = ContentType('CONTENT_TYPE', None)
+    encoding = ContentEncoding('CONTENT_TYPE')
+    hash = ReaderWriter('CONTENT_MD5')
+    
+    protocol = ReaderWriter('SERVER_PROTOCOL')
+    method = ReaderWriter('REQUEST_METHOD')
+    scheme = ReaderWriter('wsgi.url_scheme')
+    #path = Path('SCRIPT_NAME', default='')
+    #remainder = Path('PATH_INFO', default='')
+    
+    host = Host('HTTP_HOST', rfc='14.23')
+    server = ReaderWriter('SERVER_NAME')
+    port = Int('SERVER_PORT')
+    
+    user = ReaderWriter('REMOTE_USER', default=None) # TODO: abstract this out to remote.user and remote.addr
+    address = ReaderWriter('REMOTE_ADDR', default=None)
+    
+    #parameters = ReaderWriter('PARAMETERS', default='')
+    #query = ReaderWriter('QUERY_STRING', default='')
+    #args = RoutingArgs('wsgiorg.routing_args')
+    #kwargs = RoutingKwargs('wsgiorg.routing_args')
+    fragment = ReaderWriter('FRAGMENT')
     
     @property
     def url(self):
