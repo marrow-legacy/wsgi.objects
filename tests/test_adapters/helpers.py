@@ -15,6 +15,9 @@ class MockObject(object):
 
     def __contains__(self, name):
         return name in self._data
+    
+    def __iter__(self):
+        return iter(self._data)
 
     def get(self, name, default=None):
         return self._data.get(name, default)
