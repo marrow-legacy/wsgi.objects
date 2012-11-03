@@ -31,7 +31,7 @@ class ContentType(ReaderWriter):
             if original and b';' in original:
                 value += b';' + original.split(b';', 1)[1]
         
-        __import__('pprint').pprint((">>>", value))
+        # __import__('pprint').pprint((">>>", value))
         super(ContentType, self).__set__(obj, value)
 
 

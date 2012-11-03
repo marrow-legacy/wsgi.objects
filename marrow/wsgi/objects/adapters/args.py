@@ -10,7 +10,7 @@ except ImportError:
 from marrow.util.bunch import MultiBunch
 from marrow.util.path import Path as PathObj
 
-from marrow.wsgi.objects.adapters.base import *
+from marrow.wsgi.objects.adapters.base import ReaderWriter
 
 
 __all__ = ['Path', 'RoutingArgs', 'RoutingKwargs']

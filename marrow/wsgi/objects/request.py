@@ -11,14 +11,11 @@ except ImportError:
    from urllib import parse as urlparse
    from urllib.parse import unquote, urlencode
 
-from weakref import proxy
-
 from marrow.util.compat import binary, IO
-from marrow.util.object import NoDefault
-from marrow.util.insensitive import CaseInsensitiveDict
 
-from marrow.wsgi.objects.adapters.base import ReaderWriter, Int, Host
-from marrow.wsgi.objects.adapters.content import ContentType, ContentEncoding
+from .adapters.base import ReaderWriter, Int, Host
+from .adapters.content import ContentType, ContentEncoding
+from .adapters.request import RequestHeaders
 
 
 SCHEME_RE = re.compile(r'^[a-z]+:', re.I)
@@ -61,30 +58,71 @@ class Request(BareRequest):
     _writeable = True  # Can you alter the attributes of this object?
     _final = False
     
-    #body = RequestBody('wsgi.input')
-    length = Int('CONTENT_LENGTH', None, rfc='14.13')
-    mime = ContentType('CONTENT_TYPE', None)
-    encoding = ContentEncoding('CONTENT_TYPE')
-    hash = ReaderWriter('CONTENT_MD5')
-    
-    protocol = ReaderWriter('SERVER_PROTOCOL')
+    # General Attributes
     method = ReaderWriter('REQUEST_METHOD')
-    scheme = ReaderWriter('wsgi.url_scheme')
-    #path = Path('SCRIPT_NAME', default='')
-    #remainder = Path('PATH_INFO', default='')
+    headers = RequestHeaders()
     
+    # Data Attributes
+    query = ReaderWriter('QUERY_STRING', default='')
+    #form = ReaderWriter()
+    #files = ReaderWriter()
+    parameters = ReaderWriter('PARAMETERS', default='')
+    fragment = ReaderWriter('FRAGMENT')
+    #body = RequestBody('wsgi.input')
+    #data = parameters + query + form + files
+    
+    # URL Construction Attributes
+    protocol = ReaderWriter('SERVER_PROTOCOL')
+    scheme = ReaderWriter('wsgi.url_scheme')
+    user = ReaderWriter('REMOTE_USER', default=None) # TODO: abstract this out to remote.user and remote.addr
+    address = ReaderWriter('REMOTE_ADDR', default=None)
     host = Host('HTTP_HOST', rfc='14.23')
     server = ReaderWriter('SERVER_NAME')
     port = Int('SERVER_PORT')
+    path = ReaderWriter('SCRIPT_NAME', default='')  # TODO: Rich interpretation.
+    remainder = ReaderWriter('PATH_INFO', default='')  # TODO: Rich interpretation.
     
-    user = ReaderWriter('REMOTE_USER', default=None) # TODO: abstract this out to remote.user and remote.addr
-    address = ReaderWriter('REMOTE_ADDR', default=None)
-    
-    #parameters = ReaderWriter('PARAMETERS', default='')
-    #query = ReaderWriter('QUERY_STRING', default='')
+    # WSGI Extensions
     #args = RoutingArgs('wsgiorg.routing_args')
     #kwargs = RoutingKwargs('wsgiorg.routing_args')
-    fragment = ReaderWriter('FRAGMENT')
+    
+    # General Headers: Informational
+    connection = ReaderWriter('HTTP_CONNECTION')
+    date = ReaderWriter('HTTP_DATE')
+    version = ReaderWriter('HTTP_MIME_VERSION')
+    trailers = ReaderWriter('HTTP_TRAILERS')
+    transfer = ReaderWriter('HTTP_TRANSFER_ENCODING')
+    upgrade = ReaderWriter('HTTP_UPGRADE')
+    via = ReaderWriter('HTTP_VIA')
+    
+    # General Headers: Cache
+    cache = ReaderWriter('HTTP_CACHE_CONTROL')  # TODO: Rich interpretation.
+    pragma = ReaderWriter('HTTP_PRAGMA')
+    
+    # General Headers: Informational
+    referer = ReaderWriter('HTTP_REFERER')
+    agent = ReaderWriter('HTTP_USER_AGENT')  # TODO: Rich interpretation.
+    
+    # Request Headers: Conditional
+    expect = ReaderWriter('HTTP_EXPECT')
+    # condition.{match,modified_since,none_match,range,unmodified_since}
+    range = ReaderWriter('HTTP_RANGE')  # TODO: Rich interpretation.  (Slice.)
+    
+    # Request Headers: Security
+    authorization = ReaderWriter('HTTP_AUTHORIZATION')
+    cookies = ReaderWriter('HTTP_COOKIE')  # TODO: Rich interpretation.
+    
+    # Entity Headers: Content
+    base = ReaderWriter('HTTP_CONTENT_BASE')
+    description = ReaderWriter('HTTP_CONTENT_DESCRIPTION')
+    disposition = ReaderWriter('HTTP_CONTENT_DISPOSITION')
+    encoding = ReaderWriter('HTTP_CONTENT_ENCODING')
+    language = ReaderWriter('HTTP_CONTENT_LANGUAGE')
+    length = Int('CONTENT_LENGTH', None, rfc='14.13')
+    location = ReaderWriter('HTTP_CONTENT_LOCATION')
+    hash = ReaderWriter('CONTENT_MD5')
+    mime = ContentType('CONTENT_TYPE', None)
+    charset = ContentEncoding('CONTENT_TYPE')
     
     @property
     def url(self):
@@ -133,7 +171,7 @@ class Request(BareRequest):
         The presence of this value is JavaScript library-dependant. Both Prototype and jQuery are known to work.
         """
         
-        return self.get('HTTP_X_REQUESTED_WITH', '') == 'XMLHttpRequest'
+        return self.get('HTTP_X_REQUESTED_WITH', b'') == b'XMLHttpRequest'
 
 
 class LocalRequest(Request):
