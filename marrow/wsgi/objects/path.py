@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 
+import sys
 import collections
 
 from marrow.util.compat import basestring, binary, unicode, unicodestr
@@ -59,20 +60,25 @@ class Path(object):
 
     def __set__(self, obj, value):
         self.replace(value)
-
+    
     def __unicode__(self):
         if self[:1] == [self.separator]:
             return self.separator + self.separator.join((quote_plus(i) if self.encoded else i) for i in self[1:])
         
         return self.separator.join((quote_plus(i) if self.encoded else i) for i in self)
 
-    def __str__(self):
+    def __bytes__(self):
         if self[:1] == [self.separator]:
             sep = self.separator.encode('ascii')
             return sep + sep.join((quote_plus(i.encode(self.encoding)) if self.encoded else i) for i in self[1:])
         
-        return self.separator.encode('ascii').join((quote_plus(i.encode(self.encoding)) if self.encoded else i) for i in self)
+        return self.separator.encode('ascii').join((quote_plus(i.encode(self.encoding)) if self.encoded else i.encode(self.encoding)) for i in self)
 
+    if sys.version_info[0] == 2:
+        __str__ = __bytes__
+    else:
+        __str__ = __unicode__
+    
     def __add__(self, other):
         return self.copy().extend(other)
 
