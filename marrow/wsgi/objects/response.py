@@ -86,7 +86,7 @@ class Response(object):
             if not hasattr(self, name):
                 raise AttributeError('Unknown attribute %r.' % (name, ))
             
-            setattr(self, name, kw[value])
+            setattr(self, name, kw[name])
         
         super(Response, self).__init__()
     
