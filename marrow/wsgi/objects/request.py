@@ -14,6 +14,7 @@ except ImportError:
 from marrow.util.compat import binary, IO
 
 from .adapters.base import ReaderWriter, Int, Host
+from .adapters.args import Path
 from .adapters.content import ContentType, ContentEncoding
 from .adapters.request import RequestHeaders
 
@@ -79,8 +80,8 @@ class Request(BareRequest):
     host = Host('HTTP_HOST', rfc='14.23')
     server = ReaderWriter('SERVER_NAME')
     port = Int('SERVER_PORT')
-    path = ReaderWriter('SCRIPT_NAME', default='')  # TODO: Rich interpretation.
-    remainder = ReaderWriter('PATH_INFO', default='')  # TODO: Rich interpretation.
+    path = Path('SCRIPT_NAME', default='')
+    remainder = Path('PATH_INFO', default='')
     
     # WSGI Extensions
     #args = RoutingArgs('wsgiorg.routing_args')

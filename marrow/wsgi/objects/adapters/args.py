@@ -8,8 +8,8 @@ except ImportError:
             [(k.decode(encoding, 'replace'), v.decode(encoding, 'replace')) for k, v in parse_qsl_(qs, keep_blank_values, strict_parsing)]
 
 from marrow.util.bunch import MultiBunch
-from marrow.util.path import Path as PathObj
 
+from marrow.wsgi.objects.path import Path as PathObj
 from marrow.wsgi.objects.adapters.base import ReaderWriter
 
 
